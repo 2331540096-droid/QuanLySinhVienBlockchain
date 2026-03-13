@@ -155,10 +155,174 @@
     <script src="js/contract.js"></script>
     <script src="js/app.js"></script>
     <script>
+        // =========================================
+        // CONTRACT CONFIGURATION
+        // =========================================
+        const GANACHE_RPC = 'http://127.0.0.1:7545';
+
         /**
-         * Connect wallet and load student info
+         * Check if URL has student ID parameter
+         * Supports both ?student=ID and ?id=ID
          */
-        async function connectAndLoadInfo() {
+        function getStudentIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return parseInt(params.get('student') || params.get('id')) || null;
+        }
+
+        /**
+         * Load student info WITHOUT MetaMask using HTTP provider
+         */
+        async function loadStudentInfoPublic(studentId) {
+            try {
+                console.log('Loading student without MetaMask:', studentId);
+                
+                document.getElementById('notConnectedSection').classList.add('hidden');
+                document.getElementById('connectedSection').classList.remove('hidden');
+                
+                showLoading();
+
+                // Create Web3 with HTTP provider (NO MetaMask needed)
+                const web3 = new Web3(new Web3.providers.HttpProvider(GANACHE_RPC));
+                const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+
+                // Fetch student
+                const student = await contract.methods.getStudent(studentId).call();
+
+                if (!student || !student.exists) {
+                    showError('❌ Sinh viên không tồn tại trong hệ thống.');
+                    document.getElementById('connectedSection').classList.add('hidden');
+                    document.getElementById('notConnectedSection').classList.remove('hidden');
+                    return;
+                }
+
+                // Update greeting
+                document.getElementById('greetingText').textContent = `Xin chào ${student.fullName}`;
+                
+                // Display student info
+                displayStudentInfo(student, studentId);
+
+                // Fetch and display grades
+                const grades = await contract.methods.getStudentGrades(studentId).call();
+                displayGrades(grades);
+
+                // Fetch and display degrees
+                const degreeIds = await contract.methods.getDegreesByStudent(studentId).call();
+                await displayDegrees(degreeIds, contract);
+
+                hideLoading();
+                
+                // Hide action buttons if viewing publicly
+                document.getElementById('switchWalletBtnMain').classList.add('hidden');
+                document.getElementById('generateQRBtn').classList.add('hidden');
+
+            } catch (error) {
+                console.error('Error loading student:', error);
+                showError('❌ Lỗi: ' + error.message);
+                document.getElementById('connectedSection').classList.add('hidden');
+                document.getElementById('notConnectedSection').classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Display student info in UI
+         */
+        function displayStudentInfo(student, studentId) {
+            document.getElementById('infoStudentId').textContent = student.studentId;
+            document.getElementById('infoFullName').textContent = student.fullName;
+            document.getElementById('infoDateOfBirth').textContent = student.dateOfBirth || 'N/A';
+            document.getElementById('infoCourse').textContent = student.course || 'N/A';
+            document.getElementById('infoEnrollmentYear').textContent = student.enrollmentYear || 'N/A';
+        }
+
+        /**
+         * Display grades in UI
+         */
+        function displayGrades(grades) {
+            const gradesCard = document.getElementById('gradesCard');
+            const gradesList = document.getElementById('gradesList');
+
+            if (!grades || grades.length === 0) {
+                gradesCard.classList.add('hidden');
+                return;
+            }
+
+            gradesCard.classList.remove('hidden');
+            gradesList.innerHTML = grades.map(grade => `
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <p class="font-semibold text-slate-900">${grade.subjectName}</p>
+                    <p class="text-sm text-slate-500">${grade.semester}</p>
+                    <p class="text-lg font-bold text-sky-600 mt-2">${grade.score}/10</p>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Display degrees in UI
+         */
+        async function displayDegrees(degreeIds, contract) {
+            const degreesCard = document.getElementById('degreesCard');
+            const degreesList = document.getElementById('degreesList');
+
+            if (!degreeIds || degreeIds.length === 0) {
+                degreesCard.classList.add('hidden');
+                return;
+            }
+
+            degreesCard.classList.remove('hidden');
+            
+            const degreesHTML = await Promise.all(degreeIds.map(async (id) => {
+                const degree = await contract.methods.degrees(id).call();
+                const status = degree.revoked ? '❌ Đã Thu Hồi' : '✅ Hiệu Lực';
+                
+                return `
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <p class="font-semibold text-slate-900">${degree.degreeType}</p>
+                        <p class="text-sm text-slate-500">${degree.issuingOrganization}</p>
+                        <p class="text-sm text-slate-600 mt-2">${status}</p>
+                    </div>
+                `;
+            }));
+
+            degreesList.innerHTML = degreesHTML.join('');
+        }
+
+        /**
+         * Show/hide loading message
+         */
+        function showLoading() {
+            document.getElementById('loadingMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        /**
+         * Check if URL has student ID, load accordingly
+         */
+        window.addEventListener('load', function() {
+            const studentId = getStudentIdFromURL();
+            
+            if (studentId) {
+                // Public view - load without MetaMask
+                console.log('URL has student ID:', studentId);
+                loadStudentInfoPublic(studentId);
+            } else {
+                // Private view - ask for MetaMask
+                console.log('No student ID in URL - waiting for MetaMask connection');
+            }
+        });
+        
+        /**
+         * Original function - connect wallet and load info
+        
             try {
                 showLoading();
                 
