@@ -4,16 +4,29 @@
  */
 
 /**
+ * Get the actual host URL for QR code link
+ */
+function getQRCodeURL() {
+    const host = window.location.host;
+    const protocol = window.location.protocol;
+    return `${protocol}//${host}`;
+}
+
+/**
  * Generate QR Code for student profile
+ * Points to student-view.html
  * @param {number} studentId - Student ID
  * @param {string} studentName - Student Name
  */
 async function generateStudentQRCode(studentId, studentName) {
     try {
-        // Create the public link - navigate to view-student-profile.html
+        // Create the public link - point to student-view.html
+        const baseURL = getQRCodeURL();
         const currentPath = window.location.pathname;
-        const baseURL = window.location.origin + currentPath.substring(0, currentPath.lastIndexOf('/')) + '/view-student-profile.html';
-        const profileURL = `${baseURL}?id=${studentId}`;
+        const filePath = currentPath.substring(0, currentPath.lastIndexOf('/')) + '/student-view.html';
+        const profileURL = `${baseURL}${filePath}?id=${studentId}`;
+
+        console.log('QR Code URL:', profileURL);
 
         // Use QR Code API from goQR
         const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(profileURL)}`;

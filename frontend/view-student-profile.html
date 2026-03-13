@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông Tin Sinh Viên - Xem Công Khai</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <!-- Web3.js từ CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
 </head>
 <body class="bg-slate-50">
     <div class="min-h-screen flex flex-col">
@@ -113,9 +114,362 @@
         </footer>
     </div>
 
-    <script src="js/web3.js"></script>
-    <script src="js/contract.js"></script>
     <script>
+        // ============================================
+        // CONTRACT CONFIGURATION
+        // Thay đổi giá trị này theo contract address của bạn
+        // ============================================
+        const CONTRACT_ADDRESS = '0x446EEF87B7C62Fe5A32ff06040Be527D43851a43';
+        const GANACHE_RPC = 'http://127.0.0.1:7545';
+        
+        const CONTRACT_ABI = [
+            {"inputs": [{"internalType": "uint256", "name": "_studentId", "type": "uint256"}], "name": "getStudent", "outputs": [{"components": [{"internalType": "uint256", "name": "studentId", "type": "uint256"}, {"internalType": "string", "name": "fullName", "type": "string"}, {"internalType": "string", "name": "dateOfBirth", "type": "string"}, {"internalType": "string", "name": "course", "type": "string"}, {"internalType": "uint256", "name": "enrollmentYear", "type": "uint256"}, {"internalType": "address", "name": "walletAddress", "type": "address"}, {"internalType": "bool", "name": "exists", "type": "bool"}], "internalType": "struct StudentCredential.Student", "name": "", "type": "tuple"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [{"internalType": "uint256", "name": "_studentId", "type": "uint256"}], "name": "getStudentGrades", "outputs": [{"components": [{"internalType": "string", "name": "subjectName", "type": "string"}, {"internalType": "string", "name": "semester", "type": "string"}, {"internalType": "uint256", "name": "score", "type": "uint256"}], "internalType": "struct StudentCredential.Grade[]", "name": "", "type": "tuple[]"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [{"internalType": "uint256", "name": "_studentId", "type": "uint256"}], "name": "getDegreesByStudent", "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], "name": "degrees", "outputs": [{"internalType": "uint256", "name": "degreeId", "type": "uint256"}, {"internalType": "uint256", "name": "studentId", "type": "uint256"}, {"internalType": "string", "name": "degreeType", "type": "string"}, {"internalType": "uint256", "name": "issueDate", "type": "uint256"}, {"internalType": "string", "name": "issuingOrganization", "type": "string"}, {"internalType": "bool", "name": "revoked", "type": "bool"}], "stateMutability": "view", "type": "function"}
+        ];
+
+        // ====== UTILITY FUNCTIONS ======
+        
+        function getStudentIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return parseInt(params.get('id')) || null;
+        }
+
+        function shortenAddress(address) {
+            return address.substring(0, 6) + '...' + address.substring(address.length - 4);
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(parseInt(timestamp) * 1000);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        function showError(message) {
+            console.error('ERROR:', message);
+            document.getElementById('loadingSection').classList.add('hidden');
+            document.getElementById('errorSection').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // ====== DISPLAY FUNCTIONS ======
+
+        function displayStudentInfo(student) {
+            const name = student.fullName || 'N/A';
+            
+            document.getElementById('profileName').textContent = name;
+            document.getElementById('profileStudentId').textContent = `MSSV: ${student.studentId}`;
+            document.getElementById('viewStudentId').textContent = student.studentId;
+            document.getElementById('viewFullName').textContent = name;
+            document.getElementById('viewDateOfBirth').textContent = student.dateOfBirth || 'N/A';
+            document.getElementById('viewCourse').textContent = student.course || 'N/A';
+            document.getElementById('viewEnrollmentYear').textContent = student.enrollmentYear || 'N/A';
+            document.getElementById('viewWalletAddress').textContent = shortenAddress(student.walletAddress);
+        }
+
+        function displayGrades(grades) {
+            const gradesList = document.getElementById('gradesList');
+            const noGradesMsg = document.getElementById('noGradesMessage');
+
+            if (!grades || grades.length === 0) {
+                gradesList.innerHTML = '';
+                return;
+            }
+
+            noGradesMsg.classList.add('hidden');
+            gradesList.innerHTML = grades.map(grade => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-900">${grade.subjectName}</p>
+                        <p class="text-sm text-slate-500">${grade.semester}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-sky-600">${grade.score}</p>
+                        <p class="text-xs text-slate-500">/ 10</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function displayDegrees(degreeIds, contract) {
+            const degreesList = document.getElementById('degreesList');
+            const noDegreesMsg = document.getElementById('noDegreesMessage');
+
+            if (!degreeIds || degreeIds.length === 0) {
+                degreesList.innerHTML = '';
+                return;
+            }
+
+            noDegreesMsg.classList.add('hidden');
+
+            const degreesHTML = await Promise.all(degreeIds.map(async (degreeId) => {
+                const degree = await contract.methods.degrees(degreeId).call();
+                const statusClass = degree.revoked ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
+                const statusText = degree.revoked ? '❌ Đã Thu Hồi' : '✅ Hiệu Lực';
+                const statusColor = degree.revoked ? 'text-red-700' : 'text-green-700';
+
+                return `
+                    <div class="flex items-center justify-between p-4 ${statusClass} rounded-lg border border-slate-200">
+                        <div class="flex-1">
+                            <p class="font-semibold text-slate-900">${degree.degreeType}</p>
+                            <p class="text-sm text-slate-500">${degree.issuingOrganization}</p>
+                            <p class="text-xs text-slate-400 mt-1">Ngày cấp: ${formatDate(degree.issueDate)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold ${statusColor}">${statusText}</p>
+                            <p class="text-xs text-slate-500 mt-1">ID: #${degreeId}</p>
+                        </div>
+                    </div>
+                `;
+            }));
+
+            degreesList.innerHTML = degreesHTML.join('');
+        }
+
+        // ====== MAIN LOAD FUNCTION ======
+
+        async function loadStudentProfile() {
+            try {
+                const studentId = getStudentIdFromURL();
+                
+                if (!studentId) {
+                    showError('Không tìm thấy mã số sinh viên trong URL. Vui lòng kiểm tra link QR.');
+                    return;
+                }
+
+                console.log('Loading student:', studentId);
+                console.log('Using contract address:', CONTRACT_ADDRESS);
+                console.log('Using Ganache RPC:', GANACHE_RPC);
+
+                // Create Web3 instance with HTTP provider (NO MetaMask required)
+                const web3 = new Web3(new Web3.providers.HttpProvider(GANACHE_RPC));
+
+                // Get contract instance
+                const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+
+                // Fetch student info
+                const student = await contract.methods.getStudent(studentId).call();
+                
+                if (!student || !student.exists) {
+                    showError('Sinh viên không tồn tại trong hệ thống.');
+                    return;
+                }
+
+                console.log('Student found:', student);
+
+                // Display student info
+                displayStudentInfo(student);
+
+                // Fetch and display grades
+                const grades = await contract.methods.getStudentGrades(studentId).call();
+                displayGrades(grades);
+
+                // Fetch and display degrees
+                const degreeIds = await contract.methods.getDegreesByStudent(studentId).call();
+                await displayDegrees(degreeIds, contract);
+
+                // Show success section
+                document.getElementById('loadingSection').classList.add('hidden');
+                document.getElementById('successSection').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error loading student profile:', error);
+                showError('Lỗi khi tải thông tin: ' + error.message + '. Vui lòng kiểm tra console.');
+            }
+        }
+
+        // ====== PREVENT MetaMask ALERT ======
+        // Override window.ethereum to prevent MetaMask alerts
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('Detected window.ethereum, but not using it');
+        }
+
+        // Load profile when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadStudentProfile);
+        } else {
+            loadStudentProfile();
+        }
+    </script>
+</body>
+</html>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">🎓 Thông Tin Sinh Viên</h1>
+                <p class="text-slate-500 text-sm">Trang Xem Công Khai (Không Cần Đăng Nhập)</p>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto px-6 py-12 flex-grow w-full">
+            <!-- Loading State -->
+            <div id="loadingSection" class="text-center py-20">
+                <div class="inline-block">
+                    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-sky-600 mb-4"></div>
+                    <p class="text-slate-600 text-lg">Đang tải thông tin...</p>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorSection" class="hidden text-center py-20">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-8 inline-block">
+                    <p class="text-red-700 font-semibold text-lg mb-4" id="errorMessage"></p>
+                    <button 
+                        onclick="location.reload()"
+                        class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-semibold transition"
+                    >
+                        Tải Lại Trang
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success State -->
+            <div id="successSection" class="hidden">
+                <!-- Header with name -->
+                <div class="bg-gradient-to-r from-sky-600 to-sky-700 text-white rounded-lg p-8 mb-8">
+                    <h2 id="profileName" class="text-3xl font-bold mb-2"></h2>
+                    <p id="profileStudentId" class="text-sky-100 text-lg"></p>
+                </div>
+
+                <!-- Student Info Card -->
+                <div class="bg-white rounded-lg border border-slate-200 p-8 mb-8">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">
+                        📋 Thông Tin Cá Nhân
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Mã Số Sinh Viên</p>
+                            <p id="viewStudentId" class="text-2xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Họ Tên</p>
+                            <p id="viewFullName" class="text-2xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Ngày Sinh</p>
+                            <p id="viewDateOfBirth" class="text-2xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Ngành Học</p>
+                            <p id="viewCourse" class="text-2xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Năm Nhập Học</p>
+                            <p id="viewEnrollmentYear" class="text-2xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Ví Ethereum</p>
+                            <p id="viewWalletAddress" class="text-sm font-mono text-sky-600 break-all"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grades Section -->
+                <div id="gradesSection" class="bg-white rounded-lg border border-slate-200 p-8 mb-8">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">
+                        📊 Bảng Điểm
+                    </h3>
+                    <div id="gradesList" class="space-y-3"></div>
+                    <div id="noGradesMessage" class="text-center py-8 text-slate-500">
+                        Chưa có điểm số
+                    </div>
+                </div>
+
+                <!-- Degrees Section -->
+                <div id="degreesSection" class="bg-white rounded-lg border border-slate-200 p-8">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">
+                        🎖️ Bằng Cấp & Chứng Chỉ
+                    </h3>
+                    <div id="degreesList" class="space-y-3"></div>
+                    <div id="noDegreesMessage" class="text-center py-8 text-slate-500">
+                        Chưa có bằng cấp
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="border-t border-slate-200 bg-white mt-12">
+            <div class="max-w-7xl mx-auto px-6 py-6 text-center text-slate-500 text-sm">
+                <p>© 2026 Hệ Thống Quản Lý Bằng Cấp - Công Nghệ Blockchain</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ====================================
+        // CONSTANTS - Contract ABI & Address
+        // ====================================
+        // Import từ contract.js
+        const CONTRACT_ADDRESS = '0x446EEF87B7C62Fe5A32ff06040Be527D43851a43'; // Cập nhật theo migration
+        const CONTRACT_ABI = [
+            {
+                "inputs": [{"internalType": "uint256", "name": "_studentId", "type": "uint256"}],
+                "name": "getStudent",
+                "outputs": [
+                    {
+                        "components": [
+                            {"internalType": "uint256", "name": "studentId", "type": "uint256"},
+                            {"internalType": "string", "name": "fullName", "type": "string"},
+                            {"internalType": "string", "name": "dateOfBirth", "type": "string"},
+                            {"internalType": "string", "name": "course", "type": "string"},
+                            {"internalType": "uint256", "name": "enrollmentYear", "type": "uint256"},
+                            {"internalType": "address", "name": "walletAddress", "type": "address"},
+                            {"internalType": "bool", "name": "exists", "type": "bool"}
+                        ],
+                        "internalType": "struct StudentCredential.Student",
+                        "name": "",
+                        "type": "tuple"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "_studentId", "type": "uint256"}],
+                "name": "getStudentGrades",
+                "outputs": [
+                    {
+                        "components": [
+                            {"internalType": "string", "name": "subjectName", "type": "string"},
+                            {"internalType": "string", "name": "semester", "type": "string"},
+                            {"internalType": "uint256", "name": "score", "type": "uint256"}
+                        ],
+                        "internalType": "struct StudentCredential.Grade[]",
+                        "name": "",
+                        "type": "tuple[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "_studentId", "type": "uint256"}],
+                "name": "getDegreesByStudent",
+                "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "name": "degrees",
+                "outputs": [
+                    {"internalType": "uint256", "name": "degreeId", "type": "uint256"},
+                    {"internalType": "uint256", "name": "studentId", "type": "uint256"},
+                    {"internalType": "string", "name": "degreeType", "type": "string"},
+                    {"internalType": "uint256", "name": "issueDate", "type": "uint256"},
+                    {"internalType": "string", "name": "issuingOrganization", "type": "string"},
+                    {"internalType": "bool", "name": "revoked", "type": "bool"}
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
         /**
          * Get Student ID from URL parameter
          */
