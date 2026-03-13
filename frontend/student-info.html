@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra Cứu Thông Tin Sinh Viên - Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Student Credentials</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
+                    <a href="verify-degree.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Xác Minh Bằng</a>
+                    <a href="student-info.html" class="text-slate-900 font-medium text-sm border-b-2 border-sky-600 pb-1 transition">Tra Cứu Thông Tin</a>
+                    <a id="navLoginBtn" href="login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
+                    <button id="navLogoutBtn" onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition hidden">Đăng Xuất</button>
+                    <span id="navGreeting" class="text-slate-700 font-medium text-sm hidden"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-6xl mx-auto px-6 py-12 flex-grow">
+            <!-- Not Connected Section -->
+            <div id="notConnectedSection">
+                <div class="text-center py-20">
+                    <h2 class="text-4xl font-bold text-slate-900 mb-4">Kết Nối Ví để Xem Thông Tin</h2>
+                    <p class="text-slate-600 mb-8 text-lg">Vui lòng kết nối MetaMask để xem thông tin cá nhân, điểm số và bằng cấp</p>
+                    <button 
+                        id="connectWalletBtn"
+                        onclick="connectAndLoadInfo()"
+                        class="bg-sky-600 text-white px-8 py-3 rounded-lg hover:bg-sky-700 font-semibold text-lg inline-block transition"
+                    >
+                        Kết Nối MetaMask
+                    </button>
+                </div>
+            </div>
+
+            <!-- Connected Section -->
+            <div id="connectedSection" class="hidden">
+                <!-- Greeting -->
+                <div class="mb-8 text-center">
+                    <h2 id="greetingText" class="text-3xl font-bold text-slate-900 mb-2"></h2>
+                    <p class="text-slate-600">Đây là thông tin của bạn trên hệ thống</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-center gap-4 mb-12">
+                    <button 
+                        id="switchWalletBtnMain"
+                        onclick="switchWalletAndReload()"
+                        class="bg-slate-600 text-white px-6 py-2 rounded-lg hover:bg-slate-700 font-semibold text-sm transition"
+                    >
+                        Chuyển Ví
+                    </button>
+                    <button 
+                        id="generateQRBtn"
+                        onclick="generateStudentQR()"
+                        class="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 font-semibold text-sm transition"
+                    >
+                        Tạo Mã QR
+                    </button>
+                </div>
+
+                <!-- Student Info Card -->
+                <div id="studentInfoCard" class="bg-white p-8 rounded-lg border border-slate-200 mb-8">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">Thông Tin Cá Nhân</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-1">MSSV</p>
+                            <p id="infoStudentId" class="text-xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-1">Họ Tên</p>
+                            <p id="infoFullName" class="text-xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-1">Ngày Sinh</p>
+                            <p id="infoDateOfBirth" class="text-xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-1">Ngành Học</p>
+                            <p id="infoCourse" class="text-xl font-bold text-slate-900"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-1">Năm Nhập Học</p>
+                            <p id="infoEnrollmentYear" class="text-xl font-bold text-slate-900"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grades Card -->
+                <div id="gradesCard" class="bg-white p-8 rounded-lg border border-slate-200 mb-8 hidden">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">Điểm Số</h3>
+                    <div id="gradesList" class="space-y-3"></div>
+                </div>
+
+                <!-- Degrees Card -->
+                <div id="degreesCard" class="bg-white p-8 rounded-lg border border-slate-200 mb-8 hidden">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">Bằng Cấp</h3>
+                    <div id="degreesList" class="space-y-3"></div>
+                </div>
+
+                <!-- Loading Message -->
+                <div id="loadingMessage" class="bg-sky-50 border border-sky-200 text-slate-900 px-6 py-4 rounded-lg mb-8 hidden">
+                    <p class="text-center">Đang tải dữ liệu...</p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8 hidden">
+                    <p id="errorText"></p>
+                </div>
+
+                <!-- QR Modal -->
+                <div id="qrModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-lg p-8 max-w-md w-full">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold text-slate-900">Mã QR Của Bạn</h2>
+                            <button onclick="closeQRModal()" class="text-slate-500 hover:text-slate-700 text-2xl">&times;</button>
+                        </div>
+                        <p class="text-slate-600 text-sm mb-4">Chia sẻ mã QR này cho nhà tuyển dụng để xem thông tin của bạn:</p>
+                        <div id="qrCodeContainer" class="flex justify-center mb-4 p-4 bg-slate-50 rounded-lg">
+                            <div id="qrCode"></div>
+                        </div>
+                        <p id="qrLink" class="text-xs text-slate-600 mb-6 break-all"></p>
+                        <div class="flex gap-3">
+                            <button onclick="downloadQR()" class="flex-1 bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 font-semibold text-sm transition">
+                                Tải xuống
+                            </button>
+                            <button onclick="closeQRModal()" class="flex-1 bg-slate-300 text-slate-900 px-4 py-2 rounded-lg hover:bg-slate-400 font-semibold text-sm transition">
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Blockchain Student Management System</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/web3.js"></script>
+    <script src="js/contract.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        /**
+         * Connect wallet and load student info
+         */
+        async function connectAndLoadInfo() {
+            try {
+                showLoading();
+                
+                // Initialize Web3
+                if (!initWeb3()) {
+                    showError('❌ MetaMask không được tìm thấy. Vui lòng cài đặt MetaMask!');
+                    return;
+                }
+
+                // Connect wallet
+                await connectWallet();
+
+                // Wait a moment for userAccount to be set
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                console.log('Connected account:', userAccount);
+                console.log('Admin address:', ADMIN_WALLET_ADDRESS);
+                console.log('Is admin?', isAdminWallet(userAccount));
+
+                // Check if connected wallet is admin
+                if (isAdminWallet(userAccount)) {
+                    console.log('✅ Admin wallet detected - storing session and redirecting...');
+                    
+                    // Store session for admin
+                    const session = {
+                        role: 'admin',
+                        walletAddress: userAccount.toLowerCase(),
+                        loginTime: new Date().getTime(),
+                        expiresIn: 8 * 60 * 60 * 1000
+                    };
+                    localStorage.setItem('user_session', JSON.stringify(session));
+                    localStorage.setItem('user_role', 'admin');
+                    localStorage.setItem('connected_wallet', userAccount.toLowerCase());
+                    
+                    // Verify session was saved
+                    const savedSession = JSON.parse(localStorage.getItem('user_session'));
+                    console.log('✅ Session saved:', savedSession);
+                    
+                    // Redirect to admin dashboard
+                    hideLoading();
+                    console.log('Redirecting to admin/dashboard.html...');
+                    
+                    // Use small delay to ensure localStorage is flushed
+                    setTimeout(() => {
+                        window.location.href = 'admin/dashboard.html';
+                    }, 100);
+                    return;
+                }
+
+                // Load student info after connection
+                await loadStudentInfo();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi kết nối: ' + error.message);
+            }
+        }
+
+        /**
+         * Load student info from wallet
+         */
+        async function loadStudentInfo() {
+            try {
+                showLoading();
+                
+                if (!userAccount) {
+                    showError('❌ Vui lòng kết nối ví MetaMask trước!');
+                    document.getElementById('notConnectedSection').classList.remove('hidden');
+                    document.getElementById('connectedSection').classList.add('hidden');
+                    return;
+                }
+
+                const contract = getContract();
+                
+                // Get student info by wallet address
+                const student = await contract.methods.getStudentByWallet(userAccount).call();
+                console.log('Student found:', student);
+
+                if (!student.studentId || student.studentId == 0) {
+                    showError('❌ Không tìm thấy hồ sơ sinh viên cho ví này. Vui lòng liên hệ Admin!');
+                    document.getElementById('notConnectedSection').classList.remove('hidden');
+                    document.getElementById('connectedSection').classList.add('hidden');
+                    return;
+                }
+
+                // Hide not connected section, show connected section
+                document.getElementById('notConnectedSection').classList.add('hidden');
+                document.getElementById('connectedSection').classList.remove('hidden');
+
+                // Display greeting
+                document.getElementById('greetingText').textContent = '👋 Xin chào, ' + student.fullName;
+
+                // Display student info
+                document.getElementById('infoStudentId').textContent = student.studentId;
+                document.getElementById('infoFullName').textContent = student.fullName;
+                document.getElementById('infoDateOfBirth').textContent = student.dateOfBirth;
+                document.getElementById('infoCourse').textContent = student.course;
+                document.getElementById('infoEnrollmentYear').textContent = student.enrollmentYear;
+                document.getElementById('studentInfoCard').classList.remove('hidden');
+
+                // Load grades
+                try {
+                    const grades = await contract.methods.getStudentGradesByWallet(userAccount).call();
+                    
+                    if (grades && grades.length > 0) {
+                        let gradesHTML = '<div class="space-y-3">';
+                        grades.forEach((grade) => {
+                            gradesHTML += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition">
+                                <div>
+                                    <p class="font-semibold text-slate-900">${grade.subjectName}</p>
+                                    <p class="text-xs text-slate-600 mt-1">Học kỳ: ${grade.semester}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-sky-600">${grade.score}</p>
+                                    <p class="text-xs text-slate-600">điểm</p>
+                                </div>
+                            </div>`;
+                        });
+                        gradesHTML += '</div>';
+                        document.getElementById('gradesList').innerHTML = gradesHTML;
+                        document.getElementById('gradesCard').classList.remove('hidden');
+                    }
+                } catch (e) {
+                    console.error('Error loading grades:', e);
+                }
+
+                // Load degrees
+                try {
+                    const degreeIds = await contract.methods.getStudentDegreesByWallet(userAccount).call();
+                    
+                    if (degreeIds && degreeIds.length > 0) {
+                        let degreesHTML = '<div class="space-y-3">';
+                        
+                        for (let degreeId of degreeIds) {
+                            const result = await contract.methods.verifyDegree(degreeId).call();
+                            const degree = Array.isArray(result) ? result[1] : result.degree;
+                            const isValid = !degree.revoked;
+                            const statusText = isValid ? 'Hợp lệ' : 'Bị thu hồi';
+                            const statusColor = isValid ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50';
+                            
+                            degreesHTML += `<div class="p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition">
+                                <p class="font-semibold text-slate-900">${degree.degreeType}</p>
+                                <p class="text-xs text-slate-600 mt-1">Mã bằng: <span class="font-mono font-bold">${degree.degreeId}</span></p>
+                                <p class="text-xs text-slate-600">Cơ sở cấp: ${degree.issuingOrganization}</p>
+                                <p class="text-xs font-semibold mt-2 px-2 py-1 rounded inline-block ${statusColor}">${statusText}</p>
+                            </div>`;
+                        }
+                        
+                        degreesHTML += '</div>';
+                        document.getElementById('degreesList').innerHTML = degreesHTML;
+                        document.getElementById('degreesCard').classList.remove('hidden');
+                    }
+                } catch (e) {
+                    console.error('Error loading degrees:', e);
+                }
+
+                hideLoading();
+                hideError();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi: ' + error.message);
+            }
+        }
+
+        /**
+         * Switch wallet and reload
+         */
+        async function switchWalletAndReload() {
+            try {
+                await switchWallet();
+                
+                // Wait a moment for userAccount to be set
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                console.log('Switched account:', userAccount);
+                console.log('Is admin?', isAdminWallet(userAccount));
+
+                // Check if new wallet is admin
+                if (isAdminWallet(userAccount)) {
+                    console.log('Admin wallet detected, redirecting to dashboard...');
+                    // Store session for admin
+                    const session = {
+                        role: 'admin',
+                        walletAddress: userAccount.toLowerCase(),
+                        loginTime: new Date().getTime(),
+                        expiresIn: 8 * 60 * 60 * 1000
+                    };
+                    localStorage.setItem('user_session', JSON.stringify(session));
+                    localStorage.setItem('user_role', 'admin');
+                    localStorage.setItem('connected_wallet', userAccount.toLowerCase());
+                    
+                    // Redirect to admin dashboard
+                    alert('✅ Đã chuyển sang ví Admin! Đang chuyển đến Dashboard...');
+                    window.location.href = 'admin/dashboard.html';
+                    return;
+                }
+                
+                await loadStudentInfo();
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi chuyển ví: ' + error.message);
+            }
+        }
+
+        /**
+         * Show loading message
+         */
+        function showLoading() {
+            document.getElementById('loadingMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        /**
+         * Hide loading message
+         */
+        function hideLoading() {
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        /**
+         * Show error message
+         */
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        /**
+         * Hide error message
+         */
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        /**
+         * Generate QR Code for student to share
+         */
+        function generateStudentQR() {
+            const studentId = document.getElementById('infoStudentId').textContent;
+            const studentName = document.getElementById('infoFullName').textContent;
+            
+            if (!studentId) {
+                alert('❌ Không thể tạo mã QR. Vui lòng tải lại trang!');
+                return;
+            }
+            
+            // Create URL with student ID parameter
+            const baseUrl = window.location.origin + window.location.pathname;
+            const qrUrl = baseUrl + '?student=' + studentId;
+            
+            console.log('Tạo QR code cho:', studentName, 'MSSV:', studentId);
+            console.log('QR URL:', qrUrl);
+            
+            // Clear previous QR code
+            document.getElementById('qrCode').innerHTML = '';
+            
+            // Generate QR code
+            new QRCode(document.getElementById('qrCode'), {
+                text: qrUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Show URL
+            document.getElementById('qrLink').textContent = 'Link: ' + qrUrl;
+            
+            // Show modal
+            document.getElementById('qrModal').classList.remove('hidden');
+        }
+
+        /**
+         * Close QR Modal
+         */
+        function closeQRModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+        }
+
+        /**
+         * Download QR Code
+         */
+        function downloadQR() {
+            const canvas = document.querySelector('canvas');
+            if (!canvas) {
+                alert('Lỗi: Không thể tìm thấy mã QR.');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'student-qr-code.png';
+            link.click();
+        }
+
+        /**
+         * Load student info from URL parameter
+         */
+        async function loadStudentInfoFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentId = urlParams.get('student');
+            
+            if (!studentId) {
+                return; // No student parameter in URL
+            }
+            
+            console.log('Tải thông tin sinh viên từ URL:', studentId);
+            
+            try {
+                showLoading();
+                
+                // Initialize Web3 if not already done
+                if (!initWeb3()) {
+                    showError('❌ Vui lòng cài đặt MetaMask!');
+                    return;
+                }
+                
+                const contract = getContract();
+                const student = await contract.methods.getStudent(studentId).call();
+                
+                if (!student || !student.studentId || student.studentId == 0) {
+                    showError('❌ Không tìm thấy thông tin sinh viên. MSSV có thể không tồn tại.');
+                    return;
+                }
+                
+                // Hide not connected section, show connected section
+                document.getElementById('notConnectedSection').classList.add('hidden');
+                document.getElementById('connectedSection').classList.remove('hidden');
+                
+                // Display student info (READ ONLY)
+                document.getElementById('greetingText').textContent = '👋 ' + student.fullName;
+                document.getElementById('infoStudentId').textContent = student.studentId;
+                document.getElementById('infoFullName').textContent = student.fullName;
+                document.getElementById('infoDateOfBirth').textContent = student.dateOfBirth;
+                document.getElementById('infoCourse').textContent = student.course;
+                document.getElementById('infoEnrollmentYear').textContent = student.enrollmentYear;
+                document.getElementById('studentInfoCard').classList.remove('hidden');
+                
+                // Hide action buttons for QR viewer
+                const actionDiv = document.getElementById('switchWalletBtnMain').closest('div');
+                if (actionDiv) {
+                    actionDiv.innerHTML = '<p class="text-gray-600 text-sm italic">👤 <strong>Thông tin công khai</strong> - được chia sẻ qua mã QR</p>';
+                }
+                
+                // Load grades
+                try {
+                    const grades = await contract.methods.getStudentGrades(studentId).call();
+                    console.log('Grades found:', grades);
+                    
+                    if (grades && grades.length > 0) {
+                        let gradesHTML = '<div class="overflow-x-auto"><table class="w-full border-collapse"><thead><tr class="bg-blue-50"><th class="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Môn Học</th><th class="border border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">Học Kỳ</th><th class="border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700">Điểm</th></tr></thead><tbody>';
+                        
+                        grades.forEach((grade, index) => {
+                            const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                            gradesHTML += `<tr class="${rowClass}"><td class="border border-gray-200 px-4 py-3">${grade.subjectName}</td><td class="border border-gray-200 px-4 py-3">${grade.semester}</td><td class="border border-gray-200 px-4 py-3 text-center"><span class="font-bold text-lg text-blue-600">${grade.score}</span></td></tr>`;
+                        });
+                        
+                        gradesHTML += '</tbody></table></div>';
+                        document.getElementById('gradesList').innerHTML = gradesHTML;
+                        document.getElementById('gradesCard').classList.remove('hidden');
+                    }
+                } catch (e) {
+                    console.log('Không thể tải điểm:', e.message);
+                }
+                
+                // Load degrees
+                try {
+                    const degreeIds = await contract.methods.getDegreesByStudent(studentId).call();
+                    console.log('Degree IDs found:', degreeIds);
+                    
+                    if (degreeIds && degreeIds.length > 0) {
+                        let degreesHTML = '<div class="space-y-3">';
+                        
+                        for (let degreeId of degreeIds) {
+                            const result = await contract.methods.verifyDegree(degreeId).call();
+                            const degree = Array.isArray(result) ? result[1] : result.degree;
+                            const status = degree.revoked ? '❌ Bị Thu Hồi' : '✅ Hợp Lệ';
+                            const statusColor = degree.revoked ? 'text-red-600' : 'text-green-600';
+                            const bgColor = degree.revoked ? 'bg-red-50' : 'bg-green-50';
+                            
+                            degreesHTML += `<div class="border-l-4 border-purple-500 pl-4 py-3 ${bgColor} rounded">
+                                <div class="font-semibold text-gray-800">🎓 ${degree.degreeType}</div>
+                                <div class="text-sm text-gray-600 mt-2">Tổ chức cấp: ${degree.issuingOrganization}</div>
+                                <div class="text-sm ${statusColor} font-semibold mt-2">${status}</div>
+                            </div>`;
+                        }
+                        
+                        degreesHTML += '</div>';
+                        document.getElementById('degreesList').innerHTML = degreesHTML;
+                        document.getElementById('degreesCard').classList.remove('hidden');
+                    }
+                } catch (e) {
+                    console.log('Không thể tải bằng cấp:', e.message);
+                }
+                
+                hideLoading();
+                hideError();
+                
+            } catch (error) {
+                console.error('Lỗi khi tải thông tin sinh viên:', error);
+                showError('❌ Lỗi: ' + error.message);
+            }
+        }
+
+        /**
+         * Logout function
+         */
+        function logout() {
+            localStorage.removeItem('user_session');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('connected_wallet');
+            document.getElementById('navLoginBtn').classList.remove('hidden');
+            document.getElementById('navLogoutBtn').classList.add('hidden');
+            document.getElementById('navGreeting').classList.add('hidden');
+            document.getElementById('navGreeting').textContent = '';
+            window.location.href = 'student-info.html';
+        }
+
+        /**
+         * Check if user is already logged in on page load
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if this is a QR code view (has student parameter in URL)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('student')) {
+                console.log('Đây là link QR code, tải thông tin sinh viên từ URL');
+                // Initialize Web3 first
+                initWeb3();
+                // Load student info from URL
+                loadStudentInfoFromUrl();
+                return; // Don't proceed with normal login flow
+            }
+
+            const session = JSON.parse(localStorage.getItem('user_session') || 'null');
+            if (session && session.walletAddress) {
+                const shortAddress = session.walletAddress.substring(0, 6) + '...' + session.walletAddress.substring(session.walletAddress.length - 4);
+                document.getElementById('navLoginBtn').classList.add('hidden');
+                document.getElementById('navLogoutBtn').classList.remove('hidden');
+                document.getElementById('navGreeting').classList.remove('hidden');
+                document.getElementById('navGreeting').textContent = '👋 ' + shortAddress;
+
+                // Auto reconnect to saved wallet for student
+                console.log('Tìm thấy session đã lưu, tự động kết nối ví sinh viên:', session.walletAddress);
+                
+                autoReconnectStudentWallet(session.walletAddress).then(connected => {
+                    console.log('Kết nối ví:', connected ? '✅ Thành công' : '❌ Thất bại');
+                    
+                    if (connected && userAccount) {
+                        console.log('userAccount:', userAccount);
+                        // Load student info ngay lập tức
+                        loadStudentInfo();
+                    } else {
+                        console.log('Không thể kết nối lại ví, hãy click nút kết nối');
+                        document.getElementById('notConnectedSection').classList.remove('hidden');
+                        document.getElementById('connectedSection').classList.add('hidden');
+                    }
+                }).catch(error => {
+                    console.error('Lỗi khi tự động kết nối ví:', error);
+                    document.getElementById('notConnectedSection').classList.remove('hidden');
+                    document.getElementById('connectedSection').classList.add('hidden');
+                });
+            } else {
+                // Show not connected section
+                document.getElementById('notConnectedSection').classList.remove('hidden');
+                document.getElementById('connectedSection').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

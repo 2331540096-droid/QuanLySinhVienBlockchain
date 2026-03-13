@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Minh Bằng - Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Student Credentials</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
+                    <a href="verify-degree.html" class="text-slate-900 font-medium text-sm border-b-2 border-sky-600 pb-1 transition">Xác Minh Bằng</a>
+                    <a href="student-info.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Thông Tin</a>
+                    <a id="navLoginBtn" href="login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
+                    <button id="navLogoutBtn" onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition hidden">Đăng Xuất</button>
+                    <span id="navGreeting" class="text-slate-700 font-medium text-sm hidden"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto px-6 py-12 flex-grow">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Xác Minh Bằng Cấp</h2>
+                <p class="text-slate-600 mt-1">Nhập mã số bằng để kiểm tra tính hợp lệ trên blockchain</p>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-8">
+                <p class="text-slot-900 font-semibold text-sm mb-2">Cách lấy mã số bằng:</p>
+                <ul class="text-slate-700 text-sm space-y-1 list-disc list-inside">
+                    <li>Mã số bằng là một dãy <strong>8 chữ số</strong> được cấp sau khi Admin cấp bằng</li>
+                    <li>Admin sẽ gửi mã này trong thông báo cấp bằng</li>
+                    <li>Nhập mã 8 chữ số vào phía dưới để xác minh</li>
+                </ul>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Search Form -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white p-6 rounded-lg border border-slate-200 sticky top-24">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">Xác Minh</h3>
+                        <form id="verifyForm" class="space-y-4">
+                            <div>
+                                <label for="degreeId" class="block text-slate-700 font-semibold text-sm mb-2">Mã Số Bằng</label>
+                                <input 
+                                    type="number" 
+                                    id="degreeId" 
+                                    placeholder="Nhập 8 chữ số" 
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-sm"
+                                    required
+                                >
+                            </div>
+                            <button 
+                                type="submit" 
+                                class="w-full bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 font-semibold text-sm transition"
+                            >
+                                Xác Minh
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Result -->
+                <div class="lg:col-span-2">
+                    <div id="verificationResult" class="hidden">
+                        <div id="resultContent" class="bg-white p-6 rounded-lg border border-slate-200"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Blockchain Student Management System</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>    
+    <script src="js/auth.js"></script>
+    <script src="js/web3.js"></script>
+    <script src="js/contract.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        /**
+         * Logout function
+         */
+        function logout() {
+            localStorage.removeItem('user_session');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('connected_wallet');
+            document.getElementById('navLoginBtn').classList.remove('hidden');
+            document.getElementById('navLogoutBtn').classList.add('hidden');
+            document.getElementById('navGreeting').classList.add('hidden');
+            document.getElementById('navGreeting').textContent = '';
+            window.location.href = 'verify-degree.html';
+        }
+
+        /**
+         * Check if user is already logged in on page load
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            const session = JSON.parse(localStorage.getItem('user_session') || 'null');
+            if (session && session.walletAddress) {
+                const shortAddress = session.walletAddress.substring(0, 6) + '...' + session.walletAddress.substring(session.walletAddress.length - 4);
+                document.getElementById('navLoginBtn').classList.add('hidden');
+                document.getElementById('navLogoutBtn').classList.remove('hidden');
+                document.getElementById('navGreeting').classList.remove('hidden');
+                document.getElementById('navGreeting').textContent = '👋 ' + shortAddress;
+            }
+        });
+    </script>
+</body>
+</html>

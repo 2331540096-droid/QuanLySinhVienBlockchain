@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Student Credentials</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
+                    <a href="verify-degree.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Xác Minh Bằng</a>
+                    <a href="student-info.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Thông Tin</a>
+                    <a id="navLoginBtn" href="login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
+                    <button id="navLogoutBtn" onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition hidden">Đăng Xuất</button>
+                    <span id="navGreeting" class="text-slate-700 font-medium text-sm hidden"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <div class="bg-slate-900 text-white py-20">
+            <div class="max-w-7xl mx-auto px-6 text-center">
+                <h2 class="text-5xl font-bold mb-6">Hệ Thống Quản Lý Bằng Cấp</h2>
+                <p class="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">Xác minh tính nhân thực của bằng cấp trên blockchain - an toàn, minh bạch, không thể giả mạo</p>
+                <div class="flex justify-center space-x-4">
+                    <a href="verify-degree.html" class="bg-white text-slate-900 px-8 py-3 rounded-lg font-semibold hover:bg-slate-100 transition">Xác Minh Bằng</a>
+                    <a href="student-info.html" class="bg-sky-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-sky-700 transition">Tra Cứu Thông Tin</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="max-w-7xl mx-auto px-6 py-20 flex-grow">
+            <h3 class="text-3xl font-bold text-slate-900 text-center mb-12">Tính Năng Chính</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="bg-white p-6 rounded-lg border border-slate-200 hover:border-slate-300 transition">
+                    <h4 class="text-xl font-bold text-slate-900 mb-3">Xác Minh Bằng Cấp</h4>
+                    <p class="text-slate-600 mb-4">Kiểm tra tính hợp lệ của bằng cấp trực tiếp trên blockchain với mã số bằng 8 chữ số.</p>
+                    <a href="verify-degree.html" class="text-sky-600 font-semibold hover:text-sky-700 transition">Xác minh ngay →</a>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-white p-6 rounded-lg border border-slate-200 hover:border-slate-300 transition">
+                    <h4 class="text-xl font-bold text-slate-900 mb-3">Tra Cứu Thông Tin</h4>
+                    <p class="text-slate-600 mb-4">Sinh viên có thể tra cứu thông tin cá nhân, điểm số và bằng cấp một cách an toàn trên blockchain.</p>
+                    <a href="student-info.html" class="text-sky-600 font-semibold hover:text-sky-700 transition">Tra cứu ngay →</a>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-white p-6 rounded-lg border border-slate-200 hover:border-slate-300 transition">
+                    <h4 class="text-xl font-bold text-slate-900 mb-3">Bảo Mật Cao</h4>
+                    <p class="text-slate-600 mb-4">Dữ liệu được lưu trữ trên blockchain - không thể chỉnh sửa hoặc xóa. Minh bạch và an toàn tuyệt đối.</p>
+                </div>
+            </div>
+
+            <!-- Benefits Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mt-20">
+                <div class="bg-sky-50 p-8 rounded-lg border border-sky-200">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Cho Nhà Tuyển Dụng</h3>
+                    <ul class="space-y-3 text-slate-700">
+                        <li class="flex items-start"><span class="text-sky-600 mr-3 font-bold">·</span> Xác minh bằng cấp của ứng viên trực tiếp</li>
+                        <li class="flex items-start"><span class="text-sky-600 mr-3 font-bold">·</span> Kiểm tra tính xác thực nhanh chóng</li>
+                        <li class="flex items-start"><span class="text-sky-600 mr-3 font-bold">·</span> Tránh được ứng viên làm giả bằng cấp</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-100 p-8 rounded-lg border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Cho Sinh Viên</h3>
+                    <ul class="space-y-3 text-slate-700">
+                        <li class="flex items-start"><span class="text-slate-400 mr-3 font-bold">·</span> Kiểm tra điểm số và bằng cấp bất cứ lúc nào</li>
+                        <li class="flex items-start"><span class="text-slate-400 mr-3 font-bold">·</span> Chia sẻ bằng cấp an toàn với nhà tuyển dụng</li>
+                        <li class="flex items-start"><span class="text-slate-400 mr-3 font-bold">·</span> Hồ sơ minh bạch, không thể giả mạo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Blockchain Student Management System. Powered by Ethereum & Solidity</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        /**
+         * Logout function
+         */
+        function logout() {
+            localStorage.removeItem('user_session');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('connected_wallet');
+            document.getElementById('navLoginBtn').classList.remove('hidden');
+            document.getElementById('navLogoutBtn').classList.add('hidden');
+            document.getElementById('navGreeting').classList.add('hidden');
+            document.getElementById('navGreeting').textContent = '';
+            window.location.href = 'index.html';
+        }
+
+        /**
+         * Check if user is already logged in on page load
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            const session = JSON.parse(localStorage.getItem('user_session') || 'null');
+            if (session && session.walletAddress) {
+                const shortAddress = session.walletAddress.substring(0, 6) + '...' + session.walletAddress.substring(session.walletAddress.length - 4);
+                document.getElementById('navLoginBtn').classList.add('hidden');
+                document.getElementById('navLogoutBtn').classList.remove('hidden');
+                document.getElementById('navGreeting').classList.remove('hidden');
+                document.getElementById('navGreeting').textContent = '👋 ' + shortAddress;
+            }
+        });
+    </script>
+</body>
+</html>
+                </div>
+
+                <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Thông tin Hệ thống</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Kết nối Ví:</label>
+                            <div class="flex items-center gap-3 mt-2">
+                                <button id="connectWallet" class="bg-indigo-500 text-white px-6 py-2 rounded hover:bg-indigo-600">Kết nối Ví</button>
+                                <span id="walletStatus" class="text-gray-600">Chưa kết nối</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

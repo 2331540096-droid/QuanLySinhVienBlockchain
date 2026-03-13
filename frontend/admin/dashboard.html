@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Admin Panel</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="dashboard.html" class="text-slate-900 font-medium text-sm border-b-2 border-sky-600 pb-1">Dashboard</a>
+                    <a href="students.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Sinh Viên</a>
+                    <a href="grades.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Điểm Số</a>
+                    <a href="degrees.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Bằng Cấp</a>
+                    <button onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Xuất</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-6 py-12 flex-grow">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Bảng Điều Khiển Admin</h2>
+                <p class="text-slate-600 mt-1">Quản lý sinh viên, điểm số và bằng cấp trên blockchain</p>
+            </div>
+
+            <!-- Admin Greeting -->
+            <div id="adminGreeting" class="mb-8"></div>
+
+            <!-- Admin Menu -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-8 rounded-lg border border-slate-200 hover:border-sky-300 transition cursor-pointer">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Quản Lý Sinh Viên</h3>
+                    <p class="text-slate-600 mb-6">Tạo, xem và cập nhật hồ sơ sinh viên</p>
+                    <a href="students.html" class="bg-sky-600 text-white px-6 py-2 rounded-lg hover:bg-sky-700 font-semibold text-sm transition inline-block">Quản Lý →</a>
+                </div>
+
+                <div class="bg-white p-8 rounded-lg border border-slate-200 hover:border-emerald-300 transition cursor-pointer">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Quản Lý Điểm Số</h3>
+                    <p class="text-slate-600 mb-6">Ghi nhận điểm và xem kết quả học tập</p>
+                    <a href="grades.html" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-semibold text-sm transition inline-block">Quản Lý →</a>
+                </div>
+
+                <div class="bg-white p-8 rounded-lg border border-slate-200 hover:border-purple-300 transition cursor-pointer">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Quản Lý Bằng Cấp</h3>
+                    <p class="text-slate-600 mb-6">Cấp phát, xác minh và quản lý bằng cấp</p>
+                    <a href="degrees.html" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 font-semibold text-sm transition inline-block">Quản Lý →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Blockchain Student Management System - Admin Panel</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/web3.js"></script>
+    <script src="../js/contract.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // Auto-connect wallet
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded, initializing...');
+            
+            // Khởi tạo Web3
+            initWeb3();
+            
+            // Setup session từ wallet connected
+            autoConnectWallet();
+            
+            // Sau đó mới check quyền admin
+            setTimeout(function() {
+                console.log('Checking admin access...');
+                protectAdminPage();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

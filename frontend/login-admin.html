@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Student Credentials</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
+                    <a href="verify-degree.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Xác Minh Bằng</a>
+                    <a href="student-info.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Thông Tin</a>
+                    <a id="navLoginBtn" href="login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
+                    <button id="navLogoutBtn" onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition hidden">Đăng Xuất</button>
+                    <span id="navGreeting" class="text-slate-700 font-medium text-sm hidden"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Login Container -->
+        <div class="flex-grow flex items-center justify-center px-4 py-12">
+            <div class="bg-white rounded-lg border border-slate-200 p-8 w-full max-w-md">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-slate-900">Kết Nối Ví</h1>
+                    <p class="text-slate-600 text-sm mt-2">Kết nối MetaMask để truy cập Dashboard hoặc Tra Cứu Thông Tin</p>
+                </div>
+
+                <!-- Greeting Section -->
+                <div id="greetingSection" class="mb-6 hidden">
+                    <div class="bg-sky-50 border border-sky-200 rounded-lg p-4 text-center">
+                        <p class="text-lg font-semibold text-slate-900 mb-2" id="greetingText"></p>
+                        <p class="text-xs text-slate-600 mb-3">Chuyển hướng sang trang của bạn...</p>
+                        <div class="w-full bg-slate-200 rounded-full h-1 overflow-hidden">
+                            <div class="bg-sky-500 h-full w-0 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet Status -->
+                <div id="walletStatus" class="mb-6 hidden">
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                        <p class="text-xs text-slate-600 mb-1">Ví đã kết nối:</p>
+                        <p id="connectedWallet" class="font-mono text-xs font-semibold text-emerald-700 break-all"></p>
+                    </div>
+                </div>
+
+                <!-- Connection Buttons -->
+                <div id="connectionForm" class="space-y-3 mb-6">
+                    <button 
+                        id="connectMetaMaskBtn"
+                        onclick="connectAndCheckWallet()"
+                        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                        Kết Nối MetaMask
+                    </button>
+
+                    <button 
+                        id="switchWalletBtn"
+                        onclick="switchWalletAndCheckRole()"
+                        class="w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg transition hidden"
+                    >
+                        Chuyển Ví / Tài Khoản Khác
+                    </button>
+                </div>
+
+                <!-- Result Message -->
+                <div id="message" class="hidden rounded-lg p-4 mb-4 text-sm"></div>
+
+                <!-- Info Section -->
+                <div class="bg-slate-100 border border-slate-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-slate-800 mb-3">Hướng dẫn:</p>
+                    <ul class="text-xs text-slate-700 space-y-1 list-disc list-inside">
+                        <li>Cài đặt MetaMask trong trình duyệt</li>
+                        <li>Kết nối ví Ganache (localhost:7545)</li>
+                        <li>Admin vào Dashboard quản lý</li>
+                        <li>Student vào Tra Cứu Thông Tin</li>
+                    </ul>
+                </div>
+
+                <!-- Back Link -->
+                <div class="text-center mt-6">
+                    <a href="index.html" class="text-sky-600 hover:text-sky-700 font-medium text-sm">← Quay lại Trang chủ</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-4 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-xs">
+                <p>&copy; 2026 Blockchain Student Management System</p>
+            </div>
+        </footer>
+    </div>
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-4 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-xs">
+                <p>&copy; 2026 Blockchain Student Management System</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/web3.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        /**
+         * Connect wallet and check user role
+         */
+        async function connectAndCheckWallet() {
+            try {
+                // Initialize Web3
+                if (!initWeb3()) {
+                    showMessage('❌ MetaMask không được tìm thấy. Vui lòng cài đặt MetaMask!', 'error');
+                    return;
+                }
+
+                // Connect wallet
+                await connectWallet();
+
+                // Wait a moment for userAccount to be set
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Check wallet and determine role
+                await checkUserRole();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('❌ Lỗi kết nối: ' + error.message, 'error');
+            }
+        }
+
+        /**
+         * Switch wallet and check role
+         */
+        async function switchWalletAndCheckRole() {
+            try {
+                await switchWallet();
+                
+                // Wait a moment for userAccount to be set
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                checkUserRole();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('❌ Lỗi chuyển ví: ' + error.message, 'error');
+            }
+        }
+
+        /**
+         * Check user role based on wallet address and redirect accordingly
+         */
+        async function checkUserRole() {
+            // Wait a moment to ensure userAccount is set
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            console.log('Checking role for account:', userAccount);
+            console.log('Admin address:', ADMIN_WALLET_ADDRESS);
+
+            if (!userAccount) {
+                showMessage('❌ Vui lòng kết nối ví MetaMask trước!', 'error');
+                return;
+            }
+
+            console.log('Is admin?', isAdminWallet(userAccount));
+
+            // Display wallet
+            const walletStatus = document.getElementById('walletStatus');
+            if (walletStatus) {
+                walletStatus.classList.remove('hidden');
+                document.getElementById('connectedWallet').textContent = userAccount;
+            }
+            
+            document.getElementById('connectMetaMaskBtn').classList.add('hidden');
+            document.getElementById('switchWalletBtn').classList.remove('hidden');
+
+            // Hide connection form and other elements
+            document.getElementById('connectionForm').classList.add('hidden');
+
+            // Login with MetaMask
+            const result = loginWithMetaMask(userAccount);
+
+            // Get short wallet address
+            const shortAddress = userAccount.substring(0, 6) + '...' + userAccount.substring(userAccount.length - 4);
+
+            // Update navbar
+            document.getElementById('navLoginBtn').classList.add('hidden');
+            document.getElementById('navLogoutBtn').classList.remove('hidden');
+            document.getElementById('navGreeting').classList.remove('hidden');
+            document.getElementById('navGreeting').textContent = '👋 ' + shortAddress;
+
+            // Show greeting section
+            document.getElementById('greetingSection').classList.remove('hidden');
+
+            if (result.role === 'admin') {
+                document.getElementById('greetingText').textContent = '✅ Xin chào Admin ' + shortAddress;
+                setTimeout(() => {
+                    window.location.href = 'admin/dashboard.html';
+                }, 1500);
+            } else {
+                document.getElementById('greetingText').textContent = '✅ Xin chào ' + shortAddress;
+                setTimeout(() => {
+                    window.location.href = 'student-info.html';
+                }, 1500);
+            }
+        }
+
+        /**
+         * Display message
+         */
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.classList.remove('hidden');
+            messageEl.textContent = message;
+            
+            if (type === 'success') {
+                messageEl.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg text-sm';
+            } else if (type === 'error') {
+                messageEl.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm';
+            } else {
+                messageEl.className = 'bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg text-sm';
+            }
+        }
+
+        /**
+         * Logout function
+         */
+        function logout() {
+            localStorage.removeItem('user_session');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('connected_wallet');
+            document.getElementById('navLoginBtn').classList.remove('hidden');
+            document.getElementById('navLogoutBtn').classList.add('hidden');
+            document.getElementById('navGreeting').classList.add('hidden');
+            document.getElementById('navGreeting').textContent = '';
+            window.location.href = 'index.html';
+        }
+
+        /**
+         * Add CSS animation
+         */
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes progress {
+                0% { width: 0%; }
+                100% { width: 100%; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        /**
+         * Check if user is already logged in on page load
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            const session = JSON.parse(localStorage.getItem('user_session') || 'null');
+            if (session && session.walletAddress) {
+                const shortAddress = session.walletAddress.substring(0, 6) + '...' + session.walletAddress.substring(session.walletAddress.length - 4);
+                document.getElementById('navLoginBtn').classList.add('hidden');
+                document.getElementById('navLogoutBtn').classList.remove('hidden');
+                document.getElementById('navGreeting').classList.remove('hidden');
+                document.getElementById('navGreeting').textContent = '👋 ' + shortAddress;
+            }
+        });
+    </script>
+</body>
+</html>
