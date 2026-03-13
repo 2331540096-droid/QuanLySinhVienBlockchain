@@ -30,6 +30,17 @@ Hướng dẫn bao gồm:
 - ✅ Câu hỏi thường gặp (FAQs)
 - ✅ Bảo mật & lưu ý quan trọng
 
+### 📲 Tính Năng Mã QR Chia Sẻ Thông Tin
+**👉 [HƯỚNG DẪN MÃ QR - Bấm vào đây](./README_QR_FEATURE.md)**
+
+Tính năng mới cho phép:
+- ✅ Admin tạo mã QR cho sinh viên
+- ✅ Nhà tuyển dụng quét QR xem thông tin (không cần MetaMask)
+- ✅ Chia sẻ link công khai an toàn
+- ✅ Tải xuống QR hoặc sao chép link
+- ✅ **[Xem tóm tắt thay đổi](./QR_FEATURE_SUMMARY.md)**
+- ✅ Bảo mật & lưu ý quan trọng
+
 ## Tính năng chính
 1. **Quản lý hồ sơ sinh viên**
    - Thêm, cập nhật thông tin sinh viên (ID, tên, ngày sinh, ngành, năm nhập học, địa chỉ ví)
@@ -41,6 +52,11 @@ Hướng dẫn bao gồm:
    - Cấp bằng cho sinh viên (ID bằng, loại bằng, ngày cấp, tổ chức cấp, timestamp blockchain)
    - Bằng cấp không thể sửa sau khi cấp
    - Xác thực bằng cấp công khai
+4. **📲 Tạo & Chia Sẻ Mã QR** *(NEW)*
+   - Admin tạo mã QR cho sinh viên
+   - Nhà tuyển dụng quét QR xem thông tin mà không cần MetaMask
+   - Chia sẻ link công khai hoặc tải xuống QR
+   - [📚 Chi tiết →](./README_QR_FEATURE.md)
 
 ## Công nghệ sử dụng
 - Smart Contract: Solidity

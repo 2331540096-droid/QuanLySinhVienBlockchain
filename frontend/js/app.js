@@ -392,7 +392,7 @@ async function loadStudents() {
         console.log('Student IDs retrieved:', studentIds);
         console.log('Number of students:', studentIds.length);
         
-        let html = '<table class="w-full table-auto"><thead><tr><th class="px-4 py-2">Mã SV</th><th class="px-4 py-2">Họ tên</th><th class="px-4 py-2">Ngành học</th><th class="px-4 py-2">Địa chỉ ví</th></tr></thead><tbody>';
+        let html = '<table class="w-full table-auto"><thead><tr><th class="px-4 py-2">Mã SV</th><th class="px-4 py-2">Họ tên</th><th class="px-4 py-2">Ngành học</th><th class="px-4 py-2">Địa chỉ ví</th><th class="px-4 py-2">Hành động</th></tr></thead><tbody>';
 
         // Load each student
         for (let studentId of studentIds) {
@@ -406,6 +406,14 @@ async function loadStudents() {
                         <td class="border px-4 py-2">${student.fullName}</td>
                         <td class="border px-4 py-2">${student.course}</td>
                         <td class="border px-4 py-2">${student.walletAddress.substring(0, 10)}...</td>
+                        <td class="border px-4 py-2">
+                            <button 
+                                onclick="generateStudentQRCode(${student.studentId}, '${student.fullName}')"
+                                class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm font-semibold transition"
+                            >
+                                📲 Tạo QR
+                            </button>
+                        </td>
                     </tr>`;
                 }
             } catch (e) {
