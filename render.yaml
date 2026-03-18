@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: quanlisinhvienblockchange
+    env: static
+    buildCommand: echo 'No build needed'
+    staticPublishPath: ./frontend
+    routes:
+      - path: /*
+        matchType: prefix
+        handler: index.html
