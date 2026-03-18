@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ Sơ Sinh Viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+    <script src="/frontend/js/web3.js"></script>
+</head>
+<body class="bg-white min-h-screen p-6">
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-xl p-8 mb-6 border border-blue-200">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-blue-900">Hồ Sơ Sinh Viên</h1>
+                <button onclick="disconnectWallet()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+                    Đăng Xuất
+                </button>
+            </div>
+
+            <!-- Wallet Info -->
+            <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                <p class="text-sm text-slate-700">Ví Kết Nối</p>
+                <p id="walletAddress" class="text-lg font-mono font-bold text-blue-900 break-all">...</p>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading" class="text-center py-8">
+                <div class="inline-block animate-spin">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </div>
+                <p class="text-slate-700 mt-3">Đang tải thông tin sinh viên...</p>
+            </div>
+
+            <!-- Student Profile -->
+            <div id="profileContent" class="hidden">
+                <!-- Student Info Section -->
+                <div class="mb-8 p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Thông Tin Cơ Bản</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Mã Số Sinh Viên (MSSV)</p>
+                            <p id="studentId" class="text-lg font-bold text-gray-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Họ Tên</p>
+                            <p id="fullName" class="text-lg font-bold text-gray-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Ngày Sinh</p>
+                            <p id="dateOfBirth" class="text-lg font-bold text-gray-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Lớp/Chuyên Ngành</p>
+                            <p id="course" class="text-lg font-bold text-gray-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Năm Nhập Học</p>
+                            <p id="enrollmentYear" class="text-lg font-bold text-gray-800">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <button onclick="goToDegrees()" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
+                        <span></span>
+                        <span>Xem Bằng Cấp</span>
+                    </button>
+                    <button onclick="goToGrades()" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
+                        <span></span>
+                        <span>Xem Điểm Số</span>
+                    </button>
+                </div>
+
+                <!-- Back Button -->
+                <button onclick="window.location.href='/frontend/index.html'" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                    ← Quay Lại Trang Chủ
+                </button>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMsg" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                <p id="errorText" class="font-bold">Lỗi</p>
+            </div>
+
+            <!-- Not Connected Message -->
+            <div id="notConnected" class="text-center py-8">
+                <p class="text-gray-600 mb-4">Vui lòng kết nối ví MetaMask để xem hồ sơ</p>
+                <button onclick="connectWallet()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                    Kết Nối MetaMask
+                </button>
+            </div>
+
+                <!-- Degrees Section -->
+                <div id="degreesSection" class="hidden">
+                    <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+                            <h3 class="text-2xl font-bold text-slate-900">Văn Bằng</h3>
+                            <button onclick="hideDegrees()" class="text-slate-500 hover:text-slate-700 text-2xl">✕</button>
+                        </div>
+                        <div id="degreesList" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
+                    <p id="errorText"></p>
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let contractInstance = null;
+        let currentAccount = null;
+        let currentStudentId = null;
+
+        async function init() {
+            try {
+                // Check if wallet is already connected
+                if (typeof window.ethereum !== 'undefined') {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        currentAccount = accounts[0];
+                        document.getElementById('notConnected').classList.add('hidden');
+                        await loadStudentProfile();
+                    } else {
+                        document.getElementById('loading').classList.add('hidden');
+                    }
+                } else {
+                    document.getElementById('loading').classList.add('hidden');
+                    showError('MetaMask chưa được cài đặt!');
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Lỗi khởi tạo: ' + error.message);
+            }
+        }
+
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    showError('MetaMask chưa được cài đặt!');
+                    return;
+                }
+
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                currentAccount = accounts[0];
+                document.getElementById('notConnected').classList.add('hidden');
+                await loadStudentProfile();
+            } catch (error) {
+                console.error('Connection error:', error);
+                showError('Lỗi kết nối: ' + error.message);
+            }
+        }
+
+        function disconnectWallet() {
+            // Clear session data
+            localStorage.removeItem('user_session');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('connected_wallet');
+            
+            // Reset state
+            currentAccount = null;
+            currentStudentId = null;
+            document.getElementById('profileContent').classList.add('hidden');
+            document.getElementById('notConnected').classList.remove('hidden');
+            document.getElementById('walletAddress').textContent = '...';
+            document.getElementById('errorMsg').classList.add('hidden');
+            
+            // Redirect to login page
+            window.location.href = '/frontend/login-admin.html';
+        }
+
+        async function loadStudentProfile() {
+            try {
+                document.getElementById('loading').classList.remove('hidden');
+                document.getElementById('profileContent').classList.add('hidden');
+                document.getElementById('errorMsg').classList.add('hidden');
+
+                // Update wallet display
+                document.getElementById('walletAddress').textContent = currentAccount;
+
+                // Initialize contract
+                contractInstance = getContract();
+
+                // Get student ID from wallet address
+                const studentId = await contractInstance.methods.walletToStudentId(currentAccount).call();
+                
+                if (!studentId || studentId === '0') {
+                    showError('❌ Ví này chưa được liên kết với sinh viên nào hoặc chưa được Admin phê duyệt!');
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
+                }
+
+                currentStudentId = parseInt(studentId);
+
+                // Get student details
+                const student = await contractInstance.methods.getStudent(currentStudentId).call();
+
+                if (!student || !student.exists) {
+                    showError('❌ Không tìm thấy thông tin sinh viên!');
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
+                }
+
+                // Display student info
+                document.getElementById('studentId').textContent = student.studentId;
+                document.getElementById('fullName').textContent = student.fullName;
+                document.getElementById('dateOfBirth').textContent = student.dateOfBirth;
+                document.getElementById('course').textContent = student.course;
+                document.getElementById('enrollmentYear').textContent = student.enrollmentYear;
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('profileContent').classList.remove('hidden');
+                document.getElementById('errorMsg').classList.add('hidden');
+
+            } catch (error) {
+                console.error('Load profile error:', error);
+                document.getElementById('loading').classList.add('hidden');
+                showError('Lỗi tải hồ sơ: ' + error.message);
+            }
+        }
+
+        function goToDegrees() {
+            if (currentAccount && currentStudentId) {
+                window.location.href = `/frontend/student-degrees.html?wallet=${currentAccount}&studentId=${currentStudentId}`;
+            }
+        }
+
+        function goToGrades() {
+            if (currentAccount && currentStudentId) {
+                window.location.href = `/frontend/student-grades.html?wallet=${currentAccount}&studentId=${currentStudentId}`;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMsg').classList.remove('hidden');
+        }
+
+        // Listen for account changes
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    disconnectWallet();
+                } else {
+                    currentAccount = accounts[0];
+                    loadStudentProfile();
+                }
+            });
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

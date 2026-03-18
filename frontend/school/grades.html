@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Điểm Số - Trang nhà trường</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-blue-900 border-b border-blue-800">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Trang nhà trường</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="dashboard.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Dashboard</a>
+                    <a href="students.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Sinh Viên</a>
+                    <a href="grades.html" class="text-slate-900 font-medium text-sm border-b-2 border-emerald-600 pb-1">Điểm Số</a>
+                    <a href="degrees.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Bằng Cấp</a>
+                    <button onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Xuất</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-6 py-12 flex-grow">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">Thêm Điểm Số</h2>
+                <p class="text-slate-600 mb-8">Ghi nhận điểm số cho sinh viên. Dữ liệu sẽ chờ Admin phê duyệt trước khi lưu vào blockchain</p>
+
+                <!-- Success/Error Messages -->
+                <div id="successMsg" class="hidden mb-4 p-4 bg-emerald-50 border border-emerald-300 rounded-lg">
+                    <p class="text-emerald-800" id="successText"></p>
+                </div>
+                <div id="errorMsg" class="hidden mb-4 p-4 bg-red-50 border border-red-300 rounded-lg">
+                    <p class="text-red-800" id="errorText"></p>
+                </div>
+
+                <!-- Form -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                    <form id="addGradeForm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="studentId" class="block text-sm font-semibold text-slate-800 mb-2">Mã số Sinh viên *</label>
+                                <input type="number" id="studentId" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                            </div>
+                            <div>
+                                <label for="subjectName" class="block text-sm font-semibold text-slate-800 mb-2">Tên Môn Học *</label>
+                                <input type="text" id="subjectName" placeholder="VD: Toán, Lập trình, ..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                            </div>
+                            <div>
+                                <label for="semester" class="block text-sm font-semibold text-slate-800 mb-2">Học kỳ *</label>
+                                <input type="text" id="semester" placeholder="VD: I, II, III, ..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                            </div>
+                            <div>
+                                <label for="score" class="block text-sm font-semibold text-slate-800 mb-2">Điểm Số (0-10) *</label>
+                                <input type="number" id="score" min="0" max="10" step="0.5" placeholder="VD: 8.5" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex gap-3">
+                            <button type="submit" class="bg-emerald-600 text-white px-8 py-2 rounded-lg hover:bg-emerald-700 font-semibold transition">
+                                Gửi Yêu Cầu
+                            </button>
+                            <button type="reset" class="bg-slate-200 text-slate-800 px-8 py-2 rounded-lg hover:bg-slate-300 font-semibold transition">
+                                Xoá
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Pending Requests -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Các Yêu Cầu Điểm Số</h3>
+                    <div id="requestsList" class="space-y-3">
+                        <p class="text-slate-500 text-sm">Không có yêu cầu nào</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Hệ thống quản lý sinh viên, văn bằng - Trang nhà trường</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in as school
+            const session = JSON.parse(localStorage.getItem('user_session') || 'null');
+            
+            if (!session || session.role !== 'school') {
+                alert(' Bạn không được phép truy cập trang này!');
+                window.location.href = '../login-admin.html';
+                return;
+            }
+
+            document.getElementById('addGradeForm').addEventListener('submit', handleAddGrade);
+            loadRequests();
+        });
+
+        function handleAddGrade(e) {
+            e.preventDefault();
+
+            const studentId = document.getElementById('studentId').value.trim();
+            const subjectName = document.getElementById('subjectName').value.trim();
+            const semester = document.getElementById('semester').value.trim();
+            const score = parseFloat(document.getElementById('score').value.trim());
+
+            // Validate score
+            if (score < 0 || score > 10) {
+                showError(' Điểm số phải trong khoảng 0-10!');
+                return;
+            }
+
+            // Get session
+            const session = JSON.parse(localStorage.getItem('user_session'));
+
+            // Create request object
+            const request = {
+                id: 'REQ_' + Date.now() + '_' + Math.random().toString(36).substring(7),
+                type: 'grade',
+                status: 'pending',
+                data: {
+                    studentId,
+                    subjectName,
+                    semester,
+                    score
+                },
+                createdAt: new Date().toISOString(),
+                createdBy: session.walletAddress
+            };
+
+            // Save to localStorage
+            const pendingRequests = JSON.parse(localStorage.getItem('pending_requests') || '{"students":[],"grades":[],"degrees":[]}');
+            pendingRequests.grades.push(request);
+            localStorage.setItem('pending_requests', JSON.stringify(pendingRequests));
+
+            showSuccess(' Yêu cầu thêm điểm số đã được gửi! Chờ Admin duyệt.');
+            e.target.reset();
+            loadRequests();
+        }
+
+        function loadRequests() {
+            const pendingRequests = JSON.parse(localStorage.getItem('pending_requests') || '{"students":[],"grades":[],"degrees":[]}');
+            const gradeRequests = pendingRequests.grades || [];
+            const container = document.getElementById('requestsList');
+
+            if (gradeRequests.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-sm">Không có yêu cầu nào</p>';
+                return;
+            }
+
+            const statusLabels = {
+                'pending': ' Chờ Duyệt',
+                'approved': ' Đã Duyệt',
+                'rejected': ' Từ Chối'
+            };
+
+            const statusColors = {
+                'pending': 'text-yellow-600 bg-yellow-50 border-yellow-300',
+                'approved': 'text-emerald-600 bg-emerald-50 border-emerald-300',
+                'rejected': 'text-red-600 bg-red-50 border-red-300'
+            };
+
+            container.innerHTML = gradeRequests.map(req => {
+                const data = req.data || {};
+                return `
+                <div class="border border-slate-300 rounded-lg p-4 ${statusColors[req.status] || 'bg-slate-50'}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="font-semibold text-slate-900">MSSV ${data.studentId || 'N/A'} - ${data.subjectName || 'N/A'}</p>
+                            <p class="text-xs text-slate-600">${new Date(req.createdAt).toLocaleString('vi-VN')}</p>
+                        </div>
+                        <span class="text-sm font-semibold">${statusLabels[req.status]}</span>
+                    </div>
+                    <div class="text-sm text-slate-700">
+                        <p> Học kỳ: ${data.semester || 'N/A'}</p>
+                        <p> Điểm: ${data.score || 'N/A'}/10</p>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function showSuccess(message) {
+            document.getElementById('successText').textContent = message;
+            document.getElementById('successMsg').classList.remove('hidden');
+            document.getElementById('errorMsg').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('successMsg').classList.add('hidden');
+            }, 5000);
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMsg').classList.remove('hidden');
+            document.getElementById('successMsg').classList.add('hidden');
+        }
+
+        function logout() {
+            if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
+                localStorage.removeItem('user_session');
+                window.location.href = '../login-admin.html';
+            }
+        }
+    </script>
+</body>
+</html>

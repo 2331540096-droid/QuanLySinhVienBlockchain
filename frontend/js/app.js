@@ -18,43 +18,7 @@ console.error = function(...args) {
     originalError.apply(console, args);
 };
 
-// ================================
-// ADMIN PAGE PROTECTION
-// ================================
 
-/**
- * Protect admin pages - only allow admin wallet to access
- */
-function protectAdminPage() {
-    // Wait a bit for localStorage to be fully loaded
-    setTimeout(() => {
-        const session = JSON.parse(localStorage.getItem('user_session') || 'null');
-        
-        console.log('Protecting admin page...');
-        console.log('Session:', session);
-        
-        if (!session || session.role !== 'admin') {
-            console.error('Unauthorized access to admin page');
-            alert('❌ Bạn không có quyền truy cập trang này. Vui lòng đăng nhập bằng tài khoản Admin!');
-            window.location.href = '../login-admin.html';
-            return false;
-        }
-        
-        console.log('✅ Admin authorization verified');
-        return true;
-    }, 300);
-}
-
-/**
- * Logout function - clear session and redirect
- */
-function logout() {
-    localStorage.removeItem('user_session');
-    localStorage.removeItem('user_role');
-    localStorage.removeItem('connected_wallet');
-    console.log('User logged out');
-    window.location.href = '../login-admin.html';
-}
 
 /**
  * Auto-reconnect to saved wallet for student (trên trang student-info)
@@ -100,68 +64,7 @@ async function autoReconnectStudentWallet(savedWalletAddress) {
     }
 }
 
-/**
- * Auto-connect wallet on page load
- */
-async function autoConnectWallet() {
-    try {
-        console.log('AUTOCONNECT: Bắt đầu kết nối ví...');
-        if (initWeb3()) {
-            // Get connected accounts
-            const accounts = await window.ethereum.request({
-                method: 'eth_accounts'
-            });
-            
-            console.log('AUTOCONNECT: Tài khoản MetaMask:', accounts);
-            
-            if (accounts && accounts.length > 0) {
-                const walletAddress = accounts[0];
-                userAccount = walletAddress;
-                console.log('AUTOCONNECT: Ví được kết nối:', walletAddress);
-                
-                // Setup session with wallet address
-                const result = loginWithMetaMask(walletAddress);
-                console.log('AUTOCONNECT: Kết quả đăng nhập:', result);
-                
-                // Show greeting message based on role
-                if (result.success) {
-                    if (result.role === 'admin') {
-                        console.log('👋 Xin chào Admin! Chuyển hướng tới dashboard...');
-                        // Show greeting on admin pages
-                        const greetingEl = document.getElementById('adminGreeting');
-                        if (greetingEl) {
-                            greetingEl.innerHTML = `<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
-                                <p class="font-bold">👋 Xin chào Admin!</p>
-                                <p class="text-sm">Ví: ${walletAddress}</p>
-                            </div>`;
-                        }
-                        // Check current page - if on login page, redirect to dashboard
-                        const currentPage = window.location.pathname;
-                        if (currentPage.includes('login') || currentPage === '/' || currentPage.endsWith('index.html')) {
-                            setTimeout(() => {
-                                console.log('Chuyển hướng đến dashboard...');
-                                window.location.href = 'admin/dashboard.html';
-                            }, 1000);
-                        }
-                    } else {
-                        console.log('👋 Xin chào Sinh viên!');
-                        const greetingEl = document.getElementById('studentGreeting');
-                        if (greetingEl) {
-                            greetingEl.innerHTML = `<div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
-                                <p class="font-bold">👋 Xin chào Sinh viên!</p>
-                                <p class="text-sm">Ví: ${walletAddress}</p>
-                            </div>`;
-                        }
-                    }
-                }
-            } else {
-                console.log('AUTOCONNECT: Không có ví được kết nối');
-            }
-        }
-    } catch (error) {
-        console.error('AUTOCONNECT: Lỗi:', error);
-    }
-}
+
 
 // Display console in page
 function showDebugPanel() {
@@ -310,16 +213,7 @@ async function autoConnectWallet() {
     }
 }
 
-async function loadAdminAddress() {
-    try {
-        const contract = getContract();
-        const admin = await contract.methods.admin().call();
-        document.getElementById('adminAddress').textContent = admin;
-    } catch (error) {
-        console.error('Error loading admin address:', error);
-        document.getElementById('adminAddress').textContent = 'Error loading';
-    }
-}
+
 
 async function addStudent(event) {
     event.preventDefault();
@@ -908,21 +802,7 @@ async function verifyDegree(event) {
 // Helper Functions
 // ================================
 
-/**
- * Copy degree ID to clipboard and fill into revoke form
- */
-function copyToClipboard(text, fieldId) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert(`✅ Đã sao chép mã bằng: ${text}`);
-        if (fieldId && document.getElementById(fieldId)) {
-            document.getElementById(fieldId).value = text;
-            document.getElementById(fieldId).focus();
-        }
-    }).catch(err => {
-        console.error('Lỗi sao chép:', err);
-        alert('Lỗi sao chép mã bằng. Vui lòng thử lại!');
-    });
-}
+
 
 /**
  * Copy degree ID and auto-fill revoke form

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Sinh Viên - Trang nhà trường</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-blue-900 border-b border-blue-800">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-lg font-bold text-slate-800">Trang nhà trường</h1>
+                <div class="flex items-center space-x-8">
+                    <a href="dashboard.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Dashboard</a>
+                    <a href="students.html" class="text-white font-medium text-sm border-b-2 border-blue-400 pb-1">Sinh Viên</a>
+                    <a href="grades.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Điểm Số</a>
+                    <a href="degrees.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Bằng Cấp</a>
+                    <button onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Xuất</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-6 py-12 flex-grow">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-slate-900 mb-2">Thêm Sinh Viên</h2>
+                <p class="text-slate-600 mb-8">Nhập thông tin sinh viên mới. Dữ liệu sẽ chờ Admin phê duyệt trước khi lưu vào blockchain</p>
+
+                <!-- Success/Error Messages -->
+                <div id="successMsg" class="hidden mb-4 p-4 bg-emerald-50 border border-emerald-300 rounded-lg">
+                    <p class="text-emerald-800" id="successText"></p>
+                </div>
+                <div id="errorMsg" class="hidden mb-4 p-4 bg-red-50 border border-red-300 rounded-lg">
+                    <p class="text-red-800" id="errorText"></p>
+                </div>
+
+                <!-- Form -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                    <form id="addStudentForm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="studentId" class="block text-sm font-semibold text-slate-800 mb-2">Mã số Sinh viên *</label>
+                                <input type="number" id="studentId" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                            </div>
+                            <div>
+                                <label for="fullName" class="block text-sm font-semibold text-slate-800 mb-2">Họ và Tên *</label>
+                                <input type="text" id="fullName" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                            </div>
+                            <div>
+                                <label for="dateOfBirth" class="block text-sm font-semibold text-slate-800 mb-2">Ngày Sinh *</label>
+                                <input type="date" id="dateOfBirth" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                            </div>
+                            <div>
+                                <label for="course" class="block text-sm font-semibold text-slate-800 mb-2">Ngành học/Chương trình *</label>
+                                <input type="text" id="course" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                            </div>
+                            <div>
+                                <label for="enrollmentYear" class="block text-sm font-semibold text-slate-800 mb-2">Năm Nhập học *</label>
+                                <input type="number" id="enrollmentYear" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                            </div>
+                            <div>
+                                <label for="walletAddress" class="block text-sm font-semibold text-slate-800 mb-2">Địa chỉ Ví (0x...) *</label>
+                                <input type="text" id="walletAddress" placeholder="0x..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex gap-3">
+                            <button type="submit" class="bg-sky-600 text-white px-8 py-2 rounded-lg hover:bg-sky-700 font-semibold transition">
+                                Gửi Yêu Cầu
+                            </button>
+                            <button type="reset" class="bg-slate-200 text-slate-800 px-8 py-2 rounded-lg hover:bg-slate-300 font-semibold transition">
+                                Xoá
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Pending Requests -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Các Yêu Cầu Sinh Viên</h3>
+                    <div id="requestsList" class="space-y-3">
+                        <p class="text-slate-500 text-sm">Không có yêu cầu nào</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Hệ thống quản lý sinh viên, văn bằng - Trang nhà trường</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in as school
+            const session = JSON.parse(localStorage.getItem('user_session') || 'null');
+            
+            if (!session || session.role !== 'school') {
+                alert('❌ Bạn không được phép truy cập trang này!');
+                window.location.href = '../login-admin.html';
+                return;
+            }
+
+            document.getElementById('addStudentForm').addEventListener('submit', handleAddStudent);
+            loadRequests();
+        });
+
+        function handleAddStudent(e) {
+            e.preventDefault();
+
+            const studentId = parseInt(document.getElementById('studentId').value.trim());
+            const fullName = document.getElementById('fullName').value.trim();
+            const dateOfBirth = document.getElementById('dateOfBirth').value;
+            const course = document.getElementById('course').value.trim();
+            const enrollmentYear = parseInt(document.getElementById('enrollmentYear').value.trim());
+            const walletAddress = document.getElementById('walletAddress').value.trim();
+
+            // Validate inputs
+            if (!studentId || studentId <= 0) {
+                showError('❌ MSSV phải là số dương!');
+                return;
+            }
+
+            // Validate wallet format
+            if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+                showError('❌ Địa chỉ ví không hợp lệ! Định dạng: 0x...');
+                return;
+            }
+
+            // Get session
+            const session = JSON.parse(localStorage.getItem('user_session'));
+
+            // Create request object
+            const request = {
+                id: 'REQ_' + Date.now() + '_' + Math.random().toString(36).substring(7),
+                type: 'student',
+                status: 'pending',
+                data: {
+                    studentId,  // ← uint256 (number)
+                    fullName,
+                    dateOfBirth,
+                    course,
+                    enrollmentYear,  // ← uint256 (number)
+                    walletAddress
+                },
+                createdAt: new Date().toISOString(),
+                createdBy: session.walletAddress
+            };
+
+            // Save to localStorage
+            const pendingRequests = JSON.parse(localStorage.getItem('pending_requests') || '{"students":[],"grades":[],"degrees":[]}');
+            pendingRequests.students.push(request);
+            localStorage.setItem('pending_requests', JSON.stringify(pendingRequests));
+
+            showSuccess('✅ Yêu cầu thêm sinh viên đã được gửi! Chờ Admin duyệt.');
+            e.target.reset();
+            loadRequests();
+        }
+
+        function loadRequests() {
+            const pendingRequests = JSON.parse(localStorage.getItem('pending_requests') || '{"students":[],"grades":[],"degrees":[]}');
+            const studentRequests = pendingRequests.students || [];
+            const container = document.getElementById('requestsList');
+
+            if (studentRequests.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-sm">Không có yêu cầu nào</p>';
+                return;
+            }
+
+            const statusLabels = {
+                'pending': '⏳ Chờ Duyệt',
+                'approved': '✅ Đã Duyệt',
+                'rejected': '❌ Từ Chối'
+            };
+
+            const statusColors = {
+                'pending': 'text-yellow-600 bg-yellow-50 border-yellow-300',
+                'approved': 'text-emerald-600 bg-emerald-50 border-emerald-300',
+                'rejected': 'text-red-600 bg-red-50 border-red-300'
+            };
+
+            container.innerHTML = studentRequests.map(req => {
+                const data = req.data || {};
+                const walletDisplay = data.walletAddress ? data.walletAddress.substring(0, 10) + '...' : 'N/A';
+                return `
+                <div class="border border-slate-300 rounded-lg p-4 ${statusColors[req.status] || 'bg-slate-50'}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="font-semibold text-slate-900">${data.fullName || 'N/A'} (${data.studentId || 'N/A'})</p>
+                            <p class="text-xs text-slate-600">${new Date(req.createdAt).toLocaleString('vi-VN')}</p>
+                        </div>
+                        <span class="text-sm font-semibold">${statusLabels[req.status]}</span>
+                    </div>
+                    <div class="text-sm text-slate-700">
+                        <p> Ngày sinh: ${data.dateOfBirth || 'N/A'}</p>
+                        <p> Ngành: ${data.course || 'N/A'} (K${data.enrollmentYear || 'N/A'})</p>
+                        <p> Ví: ${walletDisplay}</p>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function showSuccess(message) {
+            document.getElementById('successText').textContent = message;
+            document.getElementById('successMsg').classList.remove('hidden');
+            document.getElementById('errorMsg').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('successMsg').classList.add('hidden');
+            }, 5000);
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMsg').classList.remove('hidden');
+            document.getElementById('successMsg').classList.add('hidden');
+        }
+
+        function logout() {
+            if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
+                localStorage.removeItem('user_session');
+                window.location.href = '../login-admin.html';
+            }
+        }
+    </script>
+</body>
+</html>

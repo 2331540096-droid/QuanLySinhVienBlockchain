@@ -2,7 +2,11 @@
 
 // Admin wallet address (Ethereum address to be designated as admin)
 // Change this to your actual admin wallet address
-const ADMIN_WALLET_ADDRESS = '0x617ab556EDA00942826C0BF08B7Ac99e45CCAF84'; // Replace with actual admin wallet
+const ADMIN_WALLET_ADDRESS = '0x191940eC935f2e97ABd72098A180C811bAe83cA2'; // Replace with actual admin wallet
+
+// School wallet address (for school staff)
+const SCHOOL_WALLET_ADDRESS = '0xc3aAA3bF6B863AaAD8A0AFF52101201285C6133B'; // School wallet
+
 const SESSION_KEY = 'user_session';
 const ROLE_KEY = 'user_role';
 const WALLET_KEY = 'connected_wallet';
@@ -10,6 +14,7 @@ const WALLET_KEY = 'connected_wallet';
 // Roles
 const ROLES = {
     ADMIN: 'admin',
+    SCHOOL: 'school',
     STUDENT: 'student',
     EMPLOYER: 'employer',
     GUEST: 'guest'
@@ -21,6 +26,14 @@ const ROLES = {
 function isAdminWallet(walletAddress) {
     if (!walletAddress) return false;
     return walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase();
+}
+
+/**
+ * Check if wallet address is school staff
+ */
+function isSchoolWallet(walletAddress) {
+    if (!walletAddress) return false;
+    return walletAddress.toLowerCase() === SCHOOL_WALLET_ADDRESS.toLowerCase();
 }
 
 /**
@@ -39,15 +52,21 @@ function loginWithMetaMask(walletAddress) {
     const normalizedWallet = walletAddress.toLowerCase().trim();
     console.log('LOGIN: Ví kết nối:', normalizedWallet);
     console.log('LOGIN: Ví admin:', ADMIN_WALLET_ADDRESS.toLowerCase());
+    console.log('LOGIN: Ví school:', SCHOOL_WALLET_ADDRESS.toLowerCase());
     
     // Determine role based on wallet address
     let role = ROLES.STUDENT; // Default role for all wallets
     let isAdmin = false;
+    let isSchool = false;
 
     if (isAdminWallet(normalizedWallet)) {
         role = ROLES.ADMIN;
         isAdmin = true;
         console.log('LOGIN: ✅ Bạn là ADMIN!');
+    } else if (isSchoolWallet(normalizedWallet)) {
+        role = ROLES.SCHOOL;
+        isSchool = true;
+        console.log('LOGIN: ✅ Bạn là SCHOOL STAFF!');
     } else {
         console.log('LOGIN: Bạn là STUDENT');
     }
@@ -70,6 +89,12 @@ function loginWithMetaMask(walletAddress) {
             message: 'Đăng nhập Admin thành công!',
             role: ROLES.ADMIN
         };
+    } else if (isSchool) {
+        return {
+            success: true,
+            message: 'Đăng nhập School Staff thành công!',
+            role: ROLES.SCHOOL
+        };
     } else {
         return { 
             success: true, 
@@ -79,18 +104,7 @@ function loginWithMetaMask(walletAddress) {
     }
 }
 
-/**
- * Set admin wallet address (for configuration purposes)
- */
-function setAdminWallet(walletAddress) {
-    if (!walletAddress || walletAddress.trim() === '') {
-        return false;
-    }
-    // Note: In a real application, this should be done server-side
-    // This is just for demonstration
-    console.log('Admin wallet set to:', walletAddress);
-    return true;
-}
+
 
 /**
  * Logout
@@ -148,12 +162,7 @@ function isAdminLoggedIn() {
     return session && session.role === ROLES.ADMIN;
 }
 
-/**
- * Check if user is authenticated (any role)
- */
-function isAuthenticated() {
-    return getCurrentSession() !== null;
-}
+
 
 /**
  * Check if user has specific role
@@ -182,16 +191,7 @@ function canRevokeDegrees() {
     return hasRole(ROLES.ADMIN);
 }
 
-function canViewStudents() {
-    // Admin can view students
-    // Students and employers can view (read-only)
-    return hasRole(ROLES.ADMIN) || hasRole(ROLES.STUDENT) || hasRole(ROLES.EMPLOYER);
-}
 
-function canVerifyDegrees() {
-    // Everyone can verify degrees
-    return true;
-}
 
 /**
  * Protect admin pages - redirect to login if not authenticated

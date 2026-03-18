@@ -9,14 +9,14 @@
 <body class="bg-slate-50">
     <div class="min-h-screen flex flex-col">
         <!-- Navigation -->
-        <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <nav class="bg-blue-900 border-b border-blue-800 sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                 <h1 class="text-lg font-bold text-slate-800">Student Credentials</h1>
                 <div class="flex items-center space-x-8">
-                    <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
-                    <a href="verify-degree.html" class="text-slate-900 font-medium text-sm border-b-2 border-sky-600 pb-1 transition">Xác Minh Bằng</a>
-                    <a href="student-info.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Thông Tin</a>
-                    <a id="navLoginBtn" href="login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
+                    <a href="/frontend/index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
+                    <a href="/frontend/verify-degree.html" class="text-white font-medium text-sm border-b-2 border-blue-400 pb-1 transition">Xác Minh Bằng</a>
+                    <a href="/frontend/student-info.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Thông Tin</a>
+                    <a id="navLoginBtn" href="/frontend/login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
                     <button id="navLogoutBtn" onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition hidden">Đăng Xuất</button>
                     <span id="navGreeting" class="text-slate-700 font-medium text-sm hidden"></span>
                 </div>
@@ -84,10 +84,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>    
-    <script src="js/auth.js"></script>
-    <script src="js/web3.js"></script>
-    <script src="js/contract.js"></script>
-    <script src="js/app.js"></script>
+    <script src="/frontend/js/auth.js"></script>
+    <script src="/frontend/js/web3.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+    <script src="/frontend/js/app.js"></script>
     <script>
         /**
          * Logout function
@@ -115,7 +115,134 @@
                 document.getElementById('navGreeting').classList.remove('hidden');
                 document.getElementById('navGreeting').textContent = '👋 ' + shortAddress;
             }
+
+            // Setup form submission
+            document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await verifyDegree();
+            });
         });
+
+        /**
+         * Verify degree by ID
+         */
+        async function verifyDegree() {
+            const degreeId = document.getElementById('degreeId').value.trim();
+
+            if (!degreeId || degreeId.length !== 8) {
+                showVerificationResult(false, 'Mã số bằng phải là 8 chữ số');
+                return;
+            }
+
+            try {
+                // Initialize web3
+                if (typeof window.ethereum !== 'undefined') {
+                    window.web3 = new Web3(window.ethereum);
+                } else {
+                    window.web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+                }
+
+                // Hash degree ID
+                const degreeHash = web3.utils.soliditySha3(degreeId);
+
+                // Get contract and verify
+                const contract = getContract();
+                const result = await contract.methods.verifyDegreeByHash(degreeHash).call();
+
+                const isValid = result[0];
+                const degree = result[1];
+                const student = result[2];
+
+                if (!isValid || !student.exists || degree.revoked) {
+                    showVerificationResult(false, 'Bằng cấp không hợp lệ hoặc đã bị thu hồi');
+                    return;
+                }
+
+                // Display verification result
+                const issueDate = new Date(parseInt(degree.issueDate) * 1000).toLocaleDateString('vi-VN');
+
+                const resultHTML = `
+                    <div class="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-lg mb-6">
+                        <h4 class="text-2xl font-bold text-emerald-700 mb-4">Bằng Cấp Hợp Lệ</h4>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h5 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                    <span></span> Thông Tin Sinh Viên
+                                </h5>
+                                <div class="bg-white rounded p-4 space-y-3">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-slate-600 text-sm">Mã Số Sinh Viên</p>
+                                            <p class="font-bold text-slate-900">${student.studentId}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-600 text-sm">Họ Tên</p>
+                                            <p class="font-bold text-slate-900">${student.fullName}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-600 text-sm">Ngày Sinh</p>
+                                            <p class="font-bold text-slate-900">${student.dateOfBirth}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-600 text-sm">Chuyên Ngành</p>
+                                            <p class="font-bold text-slate-900">${student.course}</p>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <p class="text-slate-600 text-sm">Năm Nhập Học</p>
+                                            <p class="font-bold text-slate-900">${student.enrollmentYear}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h5 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                    <span>📜</span> Thông Tin Bằng Cấp
+                                </h5>
+                                <div class="bg-white rounded p-4 space-y-3">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-slate-600 text-sm">Loại Bằng</p>
+                                            <p class="font-bold text-slate-900">${degree.degreeType}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-600 text-sm">Cơ Quan Cấp</p>
+                                            <p class="font-bold text-slate-900">${degree.issuingOrganization}</p>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <p class="text-slate-600 text-sm">Ngày Cấp</p>
+                                            <p class="font-bold text-slate-900">${issueDate}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-50 border border-blue-300 rounded p-4">
+                                <p class="text-blue-800 font-semibold text-sm mb-2">Xác Minh Blockchain</p>
+                                <p class="text-blue-700 text-xs font-mono break-all">${degree.degreeHash}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('resultContent').innerHTML = resultHTML;
+                document.getElementById('verificationResult').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Verification error:', error);
+                showVerificationResult(false, 'Lỗi: ' + error.message);
+            }
+        }
+
+        function showVerificationResult(isValid, message) {
+            const resultHTML = isValid 
+                ? `<div class="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-lg"><p class="text-emerald-800 font-bold">${message}</p></div>`
+                : `<div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg"><p class="text-red-800 font-bold">❌ ${message}</p></div>`;
+
+            document.getElementById('resultContent').innerHTML = resultHTML;
+            document.getElementById('verificationResult').classList.remove('hidden');
+        }
     </script>
 </body>
 </html>

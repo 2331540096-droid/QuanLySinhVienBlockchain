@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xem Bằng Cấp - Sinh Viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+    <script src="/frontend/js/web3.js"></script>
+</head>
+<body class="bg-white min-h-screen p-6">
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-xl p-8 mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800"> Các Bằng Cấp Của Tôi</h1>
+                <div class="space-x-2">
+                    <button onclick="window.history.back()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        Quay Lại
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Info Bar -->
+            <div class="bg-gray-100 rounded-lg p-4 mb-6">
+                <p class="text-sm text-gray-600">Sinh Viên</p>
+                <p id="studentName" class="text-lg font-bold text-gray-800">-</p>
+                <p id="studentId" class="text-sm text-gray-600 font-mono mt-1">MSSV: -</p>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="text-center py-8">
+                <div class="inline-block animate-spin">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-600 mt-3">Đang tải thông tin bằng cấp...</p>
+            </div>
+
+            <!-- Degrees List -->
+            <div id="degreesContent" class="hidden">
+                <div id="degreesList" class="space-y-4"></div>
+                <div id="noDegrees" class="hidden text-center py-8 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p class="text-yellow-700 font-semibold">Chưa có bằng cấp nào được cấp</p>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMsg" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                <p id="errorText" class="font-bold">Lỗi</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let contractInstance = null;
+        let currentStudentId = null;
+        let walletAddress = null;
+
+        async function init() {
+            try {
+                // Get parameters from URL
+                const params = new URLSearchParams(window.location.search);
+                walletAddress = params.get('wallet');
+                currentStudentId = params.get('studentId');
+
+                if (!walletAddress || !currentStudentId) {
+                    showError(' Thông tin không hợp lệ. Vui lòng quay lại trang hồ sơ.');
+                    return;
+                }
+
+                // Initialize contract
+                contractInstance = getContract();
+
+                // Load student info
+                await loadStudentInfo();
+
+                // Load degrees
+                await loadDegrees();
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('degreesContent').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Lỗi khởi tạo: ' + error.message);
+            }
+        }
+
+        async function loadStudentInfo() {
+            try {
+                const student = await contractInstance.methods.getStudent(currentStudentId).call();
+                
+                if (!student || !student.exists) {
+                    throw new Error('Không tìm thấy thông tin sinh viên');
+                }
+
+                document.getElementById('studentName').textContent = student.fullName;
+                document.getElementById('studentId').textContent = 'MSSV: ' + student.studentId;
+
+            } catch (error) {
+                console.error('Load student info error:', error);
+                showError('Lỗi tải thông tin sinh viên: ' + error.message);
+            }
+        }
+
+        async function loadDegrees() {
+            try {
+                // Get all degree IDs for this student
+                const degreeIds = await contractInstance.methods.getStudentDegreesByWallet(walletAddress).call();
+                
+                console.log('Degree IDs:', degreeIds);
+
+                if (!degreeIds || degreeIds.length === 0) {
+                    document.getElementById('noDegrees').classList.remove('hidden');
+                    document.getElementById('degreesList').innerHTML = '';
+                    return;
+                }
+
+                let html = '';
+                
+                for (let degreeId of degreeIds) {
+                    const degree = await contractInstance.methods.degrees(degreeId).call();
+                    
+                    if (!degree || degree.degreeId == 0) continue;
+
+                    // Convert timestamp to date
+                    const date = new Date(parseInt(degree.issueDate) * 1000).toLocaleDateString('vi-VN');
+                    
+                    // Status badge
+                    const statusClass = degree.revoked 
+                        ? 'bg-red-100 border-red-500 text-red-700' 
+                        : 'bg-green-100 border-green-500 text-green-700';
+                    const statusText = degree.revoked ? ' Đã Thu Hồi' : ' Hiệu Lực';
+
+                    html += `
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-200 hover:shadow-lg transition">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600 font-semibold">SỐ HỢP ĐỒNG</p>
+                                    <p class="text-lg font-bold text-gray-800">#${degree.degreeId}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="inline-block px-4 py-2 rounded-lg font-semibold border ${statusClass}">
+                                        ${statusText}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 border-t border-blue-200 pt-4">
+                                <p class="text-sm text-gray-600 font-semibold">LOẠI BẰNG</p>
+                                <p class="text-2xl font-bold text-gray-800 mb-3">${degree.degreeType}</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <p class="text-sm text-gray-600 font-semibold">CƠ SỞ CẤP</p>
+                                        <p class="text-gray-800">${degree.issuingOrganization}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-600 font-semibold">NGÀY CẤP</p>
+                                        <p class="text-gray-800">${date}</p>
+                                    </div>
+                                </div>
+
+                                <!-- QR Code Button -->
+                                <button onclick="generateQR('${degree.degreeHash}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2">
+                                    <span> Tạo Mã QR</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('degreesList').innerHTML = html;
+
+            } catch (error) {
+                console.error('Load degrees error:', error);
+                showError('Lỗi tải thông tin bằng cấp: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMsg').classList.remove('hidden');
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('degreesContent').classList.add('hidden');
+        }
+
+        // Initialize on page load
+        function generateQR(degreeHash) {
+            // Create QR code data with proper URL construction
+            // Kiểm tra và log URL để debug
+            const currentPath = window.location.pathname;
+            const baseUrl = window.location.protocol + '//' + window.location.host;
+            const qrUrl = baseUrl + '/frontend/degree-view.html?hash=' + degreeHash;
+            
+            console.log('QR URL:', qrUrl);
+            console.log('Base URL:', baseUrl);
+            console.log('Current path:', currentPath);
+            
+            // Create modal div
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-8 max-w-sm w-full shadow-2xl">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center"> Mã QR Bằng Cấp</h2>
+                    
+                    <div id="qrCode" class="mb-4 p-4 bg-gray-50 rounded-lg flex justify-center"></div>
+                    
+                    <div class="bg-blue-50 border border-blue-300 rounded p-4 mb-4">
+                        <p class="text-blue-800 text-sm"><strong>Hướng dẫn:</strong></p>
+                        <p class="text-blue-700 text-xs mt-2">Quét mã QR này để xem thông tin bằng cấp. Nhà tuyển dụng có thể quét để xác minh.</p>
+                    </div>
+
+                    <textarea readonly class="w-full p-3 border border-gray-300 rounded-lg text-xs font-mono mb-4 bg-gray-50" rows="3">${qrUrl}</textarea>
+
+                    <div class="flex gap-2">
+                        <button onclick="copyToClipboard('${qrUrl}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                             Copy Link
+                        </button>
+                        <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                             Đóng
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Generate QR code image
+            setTimeout(() => {
+                try {
+                    // Use QRCode.js library if available, or simple alternative
+                    const qrcodeElement = document.getElementById('qrCode');
+                    if (typeof QRCode !== 'undefined') {
+                        new QRCode(qrcodeElement, {
+                            text: qrUrl,
+                            width: 200,
+                            height: 200
+                        });
+                    } else {
+                        // Fallback: show message
+                        qrcodeElement.innerHTML = '<p class="text-gray-600">QR Code Library chưa sẵn sàng. Sử dụng link dưới đây.</p>';
+                    }
+                } catch (error) {
+                    console.error('QR Code generation error:', error);
+                }
+            }, 100);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(' Link đã được sao chép!');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

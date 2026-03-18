@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra Cứu Sinh Viên - Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-blue-900 border-b border-blue-800 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <a href="/frontend/index.html" class="text-2xl">Link</a>
+                    <a href="/frontend/index.html" class="text-lg font-bold text-slate-800 hover:text-sky-600 transition">Student Credentials</a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="/frontend/student-search.html" class="text-white font-semibold border-b-2 border-blue-400 pb-1 text-sm">Tra Cứu Sinh Viên</a>
+                    <a href="/frontend/degree-search.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Văn Bằng</a>
+                    <a href="/frontend/login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Admin</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto px-6 py-12 flex-grow">
+            <!-- Header -->
+            <div class="mb-12">
+                <h1 class="text-4xl font-bold text-slate-900 mb-3">Tra Cứu Sinh Viên</h1>
+                <p class="text-lg text-slate-600">Nhập mã số sinh viên (MSSV) để xem thông tin cá nhân, điểm số và bằng cấp</p>
+            </div>
+
+            <!-- List All Students (Debug) -->
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-8">
+                <button 
+                    onclick="listAllStudents()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold"
+                >
+                    📋 Danh Sách Sinh Viên (Debug)
+                </button>
+                <div id="studentsList" class="mt-4 hidden"></div>
+            </div>
+
+            <!-- Search Form -->
+            <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-800 mb-3">Mã Số Sinh Viên (MSSV)</label>
+                    <div class="flex gap-3">
+                        <input 
+                            type="number" 
+                            id="searchMssv" 
+                            placeholder="Ví dụ: 123456"
+                            class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-lg"
+                        >
+                        <button 
+                            onclick="searchStudent()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition text-lg"
+                        >
+                            Tra Cứu
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    <p id="errorText"></p>
+                </div>
+
+                <!-- Loading -->
+                <div id="loadingMessage" class="hidden bg-sky-50 border border-sky-200 text-sky-700 px-4 py-3 rounded-lg text-sm">
+                    ⏳ Đang tìm kiếm...
+                </div>
+            </div>
+
+            <!-- Student Info Card -->
+            <div id="studentProfile" class="hidden">
+                <!-- Student Info -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6 pb-4 border-b border-slate-200">Thông Tin Cá Nhân</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">MSSV</p>
+                            <p class="text-2xl font-bold text-slate-900" id="infoMssv"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Họ và Tên</p>
+                            <p class="text-2xl font-bold text-slate-900" id="infoName"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Ngày Sinh</p>
+                            <p class="text-lg text-slate-900" id="infoDob">N/A</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Ngành Học</p>
+                            <p class="text-lg text-slate-900" id="infoCourse">N/A</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Năm Nhập Học</p>
+                            <p class="text-lg text-slate-900" id="infoEnrollment">N/A</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grades Section -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6 pb-4 border-b border-slate-200">Điểm Số</h2>
+                    <div id="gradesList" class="space-y-4"></div>
+                </div>
+
+                <!-- Degrees Section -->
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6 pb-4 border-b border-slate-200">Văn Bằng Cấp</h2>
+                    <div id="degreesList" class="space-y-4"></div>
+                </div>
+
+                <!-- Back Button -->
+                <div class="text-center">
+                    <button 
+                        onclick="resetSearch()" 
+                        class="bg-slate-600 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-semibold transition"
+                    >
+                        ← Tìm Kiếm Lại
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Blockchain Student Management System</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+    <script>
+        const GANACHE_RPC = 'http://127.0.0.1:7545';
+        let web3Instance = null;
+        let contractInstance = null;
+
+        /**
+         * Initialize on page load
+         */
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('=== Student Search Page - Initializing ===');
+            
+            try {
+                web3Instance = new Web3(new Web3.providers.HttpProvider(GANACHE_RPC));
+                console.log('✅ Web3 initialized');
+                
+                if (!CONTRACT_ABI || !CONTRACT_ADDRESS) {
+                    throw new Error('Contract configuration missing');
+                }
+                
+                contractInstance = new web3Instance.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+                console.log('✅ Contract initialized:', CONTRACT_ADDRESS);
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                showError('❌ Lỗi: Không thể kết nối blockchain');
+            }
+        });
+
+        /**
+         * Search student by MSSV
+         */
+        async function searchStudent() {
+            const mssv = parseInt(document.getElementById('searchMssv').value.trim());
+            
+            if (!mssv || mssv <= 0) {
+                showError('❌ Vui lòng nhập mã số sinh viên hợp lệ');
+                return;
+            }
+
+            try {
+                showLoading();
+                console.log('Searching for student:', mssv);
+                
+                // Fetch student from contract with error handling
+                let student;
+                try {
+                    student = await contractInstance.methods.getStudent(mssv).call();
+                    console.log('Student found:', student);
+                } catch (contractError) {
+                    console.error('Contract call error:', contractError);
+                    showError('❌ Lỗi kếq nối smart contract. MSSV có thể không tồn tại hoặc ABI không khớp.');
+                    return;
+                }
+                
+                if (!student || !student.studentId || student.studentId == 0) {
+                    showError('❌ Không tìm thấy sinh viên với MSSV: ' + mssv);
+                    return;
+                }
+
+                // Display student info
+                document.getElementById('infoMssv').textContent = student.studentId;
+                document.getElementById('infoName').textContent = student.fullName || 'N/A';
+                document.getElementById('infoDob').textContent = student.dateOfBirth || 'N/A';
+                document.getElementById('infoCourse').textContent = student.course || 'N/A';
+                document.getElementById('infoEnrollment').textContent = student.enrollmentYear || 'N/A';
+
+                // Load grades and degrees
+                try {
+                    await loadGrades(mssv);
+                    await loadDegrees(mssv);
+                } catch (dataError) {
+                    console.error('Error loading grades/degrees:', dataError);
+                    // Vẫn hiển thị thông tin sinh viên, chỉ có thể không có điểm/bằng
+                }
+
+                // Show student profile
+                document.getElementById('errorMessage').classList.add('hidden');
+                document.getElementById('loadingMessage').classList.add('hidden');
+                document.getElementById('studentProfile').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi: ' + error.message);
+            }
+        }
+
+        /**
+         * Load grades
+         */
+        async function loadGrades(studentId) {
+            try {
+                const grades = await contractInstance.methods.getStudentGrades(studentId).call();
+                console.log('Grades:', grades);
+                
+                let html = '';
+                if (!grades || grades.length === 0) {
+                    html = '<p class="text-slate-500">Chưa có điểm số nào</p>';
+                } else {
+                    grades.forEach(grade => {
+                        const scoreColor = grade.score >= 8 ? 'text-emerald-600' : grade.score >= 6 ? 'text-yellow-600' : 'text-red-600';
+                        html += `
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-semibold text-slate-900">${grade.subjectName}</p>
+                                        <p class="text-sm text-slate-600">Học kỳ: ${grade.semester}</p>
+                                    </div>
+                                    <p class="text-3xl font-bold ${scoreColor}">${grade.score}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                document.getElementById('gradesList').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading grades:', error);
+                document.getElementById('gradesList').innerHTML = '<p class="text-red-500">Lỗi tải điểm số</p>';
+            }
+        }
+
+        /**
+         * Load degrees
+         */
+        async function loadDegrees(studentId) {
+            try {
+                const degreeIds = await contractInstance.methods.getDegreesByStudent(studentId).call();
+                console.log('Degree IDs:', degreeIds);
+                
+                let html = '';
+                if (!degreeIds || degreeIds.length === 0) {
+                    html = '<p class="text-slate-500">Chưa có văn bằng nào</p>';
+                } else {
+                    for (let id of degreeIds) {
+                        const degree = await contractInstance.methods.degrees(id).call();
+                        const status = degree.revoked ? '❌ Đã Thu Hồi' : '✅ Hiệu Lực';
+                        const statusColor = degree.revoked ? 'text-red-700 bg-red-50' : 'text-emerald-700 bg-emerald-50';
+                        
+                        html += `
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="font-semibold text-slate-900">${degree.degreeType}</p>
+                                        <p class="text-sm text-slate-600 mt-1">Cơ sở cấp: ${degree.issuingOrganization}</p>
+                                    </div>
+                                    <p class="text-sm font-semibold px-3 py-1 rounded ${statusColor}">${status}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                document.getElementById('degreesList').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading degrees:', error);
+                document.getElementById('degreesList').innerHTML = '<p class="text-red-500">Lỗi tải văn bằng</p>';
+            }
+        }
+
+        /**
+         * Reset search
+         */
+        function resetSearch() {
+            document.getElementById('searchMssv').value = '';
+            document.getElementById('studentProfile').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('loadingMessage').classList.add('hidden');
+            document.getElementById('searchMssv').focus();
+        }
+
+        /**
+         * List all students (debug)
+         */
+        async function listAllStudents() {
+            try {
+                const listDiv = document.getElementById('studentsList');
+                listDiv.innerHTML = '<p class="text-blue-600">⏳ Đang tải danh sách...</p>';
+                
+                // Try to get student count
+                const count = await contractInstance.methods.getStudentCount().call();
+                console.log('Student count:', count);
+                
+                if (count === 0 || count === '0') {
+                    listDiv.innerHTML = '<p class="text-yellow-600">⚠️ Không có sinh viên nào trong hệ thống</p>';
+                    listDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Fallback: Try getAllStudentIds with error handling
+                let studentIds = [];
+                try {
+                    studentIds = await contractInstance.methods.getAllStudentIds().call();
+                    console.log('Student IDs from getAllStudentIds:', studentIds);
+                } catch (e) {
+                    console.warn('getAllStudentIds failed, trying alternative method...');
+                    // Fallback: Iterate from 1 to count
+                    for (let i = 1; i <= count; i++) {
+                        try {
+                            const student = await contractInstance.methods.getStudent(i).call();
+                            if (student && student.studentId) {
+                                studentIds.push(i);
+                            }
+                        } catch (err) {
+                            console.warn('Student', i, 'not found');
+                        }
+                    }
+                }
+
+                console.log('Final student IDs:', studentIds);
+                
+                if (!studentIds || studentIds.length === 0) {
+                    listDiv.innerHTML = '<p class="text-yellow-600">⚠️ Không có sinh viên nào trong hệ thống</p>';
+                } else {
+                    let html = '<h3 class="font-bold mb-2">📋 Danh sách sinh viên:</h3><ul class="text-sm space-y-1 bg-slate-100 p-3 rounded">';
+                    
+                    for (let id of studentIds) {
+                        html += `<li class="font-mono text-blue-700">MSSV: <strong>${id}</strong></li>`;
+                    }
+                    
+                    html += '</ul>';
+                    listDiv.innerHTML = html;
+                }
+                
+                listDiv.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error listing students:', error);
+                document.getElementById('studentsList').innerHTML = '<p class="text-red-500">❌ Lỗi: ' + error.message + '</p>';
+                document.getElementById('studentsList').classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Show error
+         */
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('loadingMessage').classList.add('hidden');
+            document.getElementById('studentProfile').classList.add('hidden');
+        }
+
+        /**
+         * Show loading
+         */
+        function showLoading() {
+            document.getElementById('loadingMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('studentProfile').classList.add('hidden');
+        }
+
+        // Focus on input when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('searchMssv').focus();
+        });
+
+        // Allow Enter key to search
+        document.getElementById('searchMssv').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchStudent();
+        });
+    </script>
+</body>
+</html>

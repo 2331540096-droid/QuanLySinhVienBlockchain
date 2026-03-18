@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra Cứu Văn Bằng - Blockchain Student Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-blue-900 border-b border-blue-800 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <a href="/frontend/index.html" class="text-2xl">Link</a>
+                    <a href="/frontend/index.html" class="text-lg font-bold text-slate-800 hover:text-sky-600 transition">Student Credentials</a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="/frontend/student-search.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Tra Cứu Sinh Viên</a>
+                    <a href="/frontend/degree-search.html" class="text-slate-900 font-semibold border-b-2 border-purple-600 pb-1 text-sm">Tra Cứu Văn Bằng</a>
+                    <a href="/frontend/login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Admin</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto px-6 py-12 flex-grow">
+            <!-- Header -->
+            <div class="mb-12">
+                <h1 class="text-4xl font-bold text-slate-900 mb-3">Tra Cứu Văn Bằng Cấp</h1>
+                <p class="text-lg text-slate-600">Nhập mã số văn bằng (Degree ID) để xác minh tính xác thực của bằng cấp</p>
+            </div>
+
+            <!-- Search Form -->
+            <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-800 mb-3">Mã Số Văn Bằng (Degree ID)</label>
+                    <div class="flex gap-3">
+                        <input 
+                            type="number" 
+                            id="searchDegreeId" 
+                            placeholder="Ví dụ: 1"
+                            class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg"
+                        >
+                        <button 
+                            onclick="searchDegree()"
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition text-lg"
+                        >
+                            Tra Cứu
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    <p id="errorText"></p>
+                </div>
+
+                <!-- Loading -->
+                <div id="loadingMessage" class="hidden bg-purple-50 border border-purple-200 text-purple-700 px-4 py-3 rounded-lg text-sm">
+                    ⏳ Đang xác minh...
+                </div>
+            </div>
+
+            <!-- Degree Info Card -->
+            <div id="degreeProfile" class="hidden">
+                <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm mb-8">
+                    <div class="flex justify-between items-start mb-6 pb-4 border-b border-slate-200">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Chi Tiết Văn Bằng</h2>
+                        </div>
+                        <div id="statusBadge" class="text-sm font-semibold px-4 py-2 rounded"></div>
+                    </div>
+
+                    <!-- Degree Details -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Mã Văn Bằng</p>
+                            <p class="text-2xl font-bold text-slate-900" id="infoDegreeId"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Loại Bằng</p>
+                            <p class="text-2xl font-bold text-slate-900" id="infoDegreeType"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Cơ Sở Cấp Phát</p>
+                            <p class="text-lg text-slate-900" id="infoOrganization">N/A</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Ngày Cấp</p>
+                            <p class="text-lg text-slate-900" id="infoIssueDate">N/A</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase font-semibold text-slate-500 mb-2">Sinh Viên (MSSV)</p>
+                            <p class="text-lg text-slate-900" id="infoStudentId">N/A</p>
+                        </div>
+                    </div>
+
+                    <!-- Status Info -->
+                    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">Thông Tin Xác Minh</h3>
+                        <div id="verifyInfo" class="space-y-2 text-slate-700"></div>
+                    </div>
+                </div>
+
+                <!-- Back Button -->
+                <div class="text-center">
+                    <button 
+                        onclick="resetSearch()" 
+                        class="bg-slate-600 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-semibold transition"
+                    >
+                        ← Tìm Kiếm Lại
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+                <p>&copy; 2026 Blockchain Student Management System</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+    <script>
+        const GANACHE_RPC = 'http://127.0.0.1:7545';
+        let web3Instance = null;
+        let contractInstance = null;
+
+        /**
+         * Initialize on page load
+         */
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('=== Degree Search Page - Initializing ===');
+            
+            try {
+                web3Instance = new Web3(new Web3.providers.HttpProvider(GANACHE_RPC));
+                console.log('✅ Web3 initialized');
+                
+                if (!CONTRACT_ABI || !CONTRACT_ADDRESS) {
+                    throw new Error('Contract configuration missing');
+                }
+                
+                contractInstance = new web3Instance.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+                console.log('✅ Contract initialized:', CONTRACT_ADDRESS);
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                showError('❌ Lỗi: Không thể kết nối blockchain');
+            }
+
+            // Focus on input
+            document.getElementById('searchDegreeId').focus();
+        });
+
+        /**
+         * Search degree by ID
+         */
+        async function searchDegree() {
+            const degreeId = parseInt(document.getElementById('searchDegreeId').value.trim());
+            
+            if (!degreeId || degreeId <= 0) {
+                showError('❌ Vui lòng nhập mã số văn bằng hợp lệ');
+                return;
+            }
+
+            try {
+                showLoading();
+                console.log('Searching for degree:', degreeId);
+                
+                // Fetch degree from contract
+                const degree = await contractInstance.methods.degrees(degreeId).call();
+                console.log('Degree found:', degree);
+                
+                if (!degree || !degree.degreeId || degree.degreeId == 0) {
+                    showError('❌ Không tìm thấy văn bằng với Degree ID: ' + degreeId);
+                    return;
+                }
+
+                // Format date
+                const issueDate = new Date(degree.issueDate * 1000).toLocaleDateString('vi-VN');
+
+                // Display degree info
+                document.getElementById('infoDegreeId').textContent = degree.degreeId;
+                document.getElementById('infoDegreeType').textContent = degree.degreeType;
+                document.getElementById('infoOrganization').textContent = degree.issuingOrganization;
+                document.getElementById('infoIssueDate').textContent = issueDate;
+                document.getElementById('infoStudentId').textContent = degree.studentId;
+
+                // Set status badge
+                const statusBadge = document.getElementById('statusBadge');
+                const verifyInfo = document.getElementById('verifyInfo');
+                
+                if (degree.revoked) {
+                    statusBadge.textContent = '❌ Đã Thu Hồi';
+                    statusBadge.className = 'text-sm font-semibold px-4 py-2 rounded text-red-700 bg-red-50 border border-red-200';
+                    verifyInfo.innerHTML = `
+                        <p class="text-red-700 font-semibold">Bằng cấp này đã bị thu hồi</p>
+                        <p class="text-red-600 text-sm mt-2">Bằng cấp này không còn hiệu lực và không thể được chấp nhận</p>
+                    `;
+                } else {
+                    statusBadge.textContent = '✅ Hiệu Lực';
+                    statusBadge.className = 'text-sm font-semibold px-4 py-2 rounded text-emerald-700 bg-emerald-50 border border-emerald-200';
+                    verifyInfo.innerHTML = `
+                        <p class="text-emerald-700 font-semibold">✓ Bằng cấp này có hiệu lực</p>
+                        <p class="text-emerald-600 text-sm mt-2">Bằng cấp được cấp phát bởi ${degree.issuingOrganization}</p>
+                        <p class="text-emerald-600 text-sm mt-1">Ngày cấp: ${issueDate}</p>
+                    `;
+                }
+
+                // Show degree profile
+                document.getElementById('errorMessage').classList.add('hidden');
+                document.getElementById('loadingMessage').classList.add('hidden');
+                document.getElementById('degreeProfile').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi: ' + error.message);
+            }
+        }
+
+        /**
+         * Reset search
+         */
+        function resetSearch() {
+            document.getElementById('searchDegreeId').value = '';
+            document.getElementById('degreeProfile').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('loadingMessage').classList.add('hidden');
+            document.getElementById('searchDegreeId').focus();
+        }
+
+        /**
+         * Show error
+         */
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('loadingMessage').classList.add('hidden');
+            document.getElementById('degreeProfile').classList.add('hidden');
+        }
+
+        /**
+         * Show loading
+         */
+        function showLoading() {
+            document.getElementById('loadingMessage').classList.remove('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('degreeProfile').classList.add('hidden');
+        }
+
+        // Allow Enter key to search
+        document.getElementById('searchDegreeId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchDegree();
+        });
+    </script>
+</body>
+</html>

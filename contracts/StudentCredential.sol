@@ -27,6 +27,7 @@ contract StudentCredential {
         uint256 issueDate;
         string issuingOrganization;
         bool revoked;
+        bytes32 degreeHash;  // Hash của mã ID bằng cấp (8 chữ số)
     }
 
     mapping(uint256 => Student) public students;
@@ -34,6 +35,7 @@ contract StudentCredential {
     mapping(uint256 => Degree) public degrees;
     mapping(uint256 => uint256[]) public studentDegrees;
     mapping(address => uint256) public walletToStudentId; // Mapping từ wallet address -> student ID
+    mapping(bytes32 => uint256) public degreeHashToId; // Mapping từ degree hash -> degree ID
     uint256[] public studentIds; // Track all student IDs
 
     uint256 public nextDegreeId = 1;
@@ -98,10 +100,15 @@ contract StudentCredential {
     function issueDegree(
         uint256 _studentId,
         string memory _degreeType,
-        string memory _issuingOrganization
+        string memory _issuingOrganization,
+        bytes32 _degreeHash
     ) public onlyAdmin {
         require(students[_studentId].exists, "Student does not exist");
-        degrees[nextDegreeId] = Degree(nextDegreeId, _studentId, _degreeType, block.timestamp, _issuingOrganization, false);
+        require(_degreeHash != bytes32(0), "Degree hash cannot be empty");
+        require(degreeHashToId[_degreeHash] == 0, "Degree hash already exists");
+        
+        degrees[nextDegreeId] = Degree(nextDegreeId, _studentId, _degreeType, block.timestamp, _issuingOrganization, false, _degreeHash);
+        degreeHashToId[_degreeHash] = nextDegreeId;
         studentDegrees[_studentId].push(nextDegreeId);
         nextDegreeId++;
     }
@@ -133,6 +140,33 @@ contract StudentCredential {
 
     function getDegreesByStudent(uint256 _studentId) public view returns (uint256[] memory) {
         return studentDegrees[_studentId];
+    }
+
+    /**
+     * Lấy chi tiết bằng cấp theo hash
+     * Hash được tạo từ mã ID bằng (8 chữ số)
+     */
+    function getDegreeByHash(bytes32 _degreeHash) public view returns (Degree memory) {
+        uint256 degreeId = degreeHashToId[_degreeHash];
+        require(degreeId != 0, "Degree not found");
+        return degrees[degreeId];
+    }
+
+    /**
+     * Xác thực bằng cấp theo hash
+     * Trả về thông tin đầy đủ của bằng cấp và sinh viên
+     */
+    function verifyDegreeByHash(bytes32 _degreeHash) public view returns (bool isValid, Degree memory degree, Student memory student) {
+        uint256 degreeId = degreeHashToId[_degreeHash];
+        if (degreeId == 0) {
+            return (false, Degree(0, 0, "", 0, "", false, bytes32(0)), Student(0, "", "", "", 0, address(0), false));
+        }
+        
+        degree = degrees[degreeId];
+        student = students[degree.studentId];
+        isValid = !degree.revoked && student.exists;
+        
+        return (isValid, degree, student);
     }
 
     // ===================================

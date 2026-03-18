@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xem Điểm Số - Sinh Viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+    <script src="/frontend/js/web3.js"></script>
+</head>
+<body class="bg-white min-h-screen p-6">
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-xl p-8 mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">Điểm Số Của Tôi</h1>
+                <div class="space-x-2">
+                    <button onclick="window.history.back()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        ← Quay Lại
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student Info Bar -->
+            <div class="bg-gray-100 rounded-lg p-4 mb-6">
+                <p class="text-sm text-gray-600">Sinh Viên</p>
+                <p id="studentName" class="text-lg font-bold text-gray-800">-</p>
+                <p id="studentId" class="text-sm text-gray-600 font-mono mt-1">MSSV: -</p>
+            </div>
+
+            <!-- GPA Summary (if any) -->
+            <div id="gpaSummary" class="hidden bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-4 mb-6 border-l-4 border-blue-600">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Điểm Trung Bình</p>
+                        <p id="averageGPA" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Tổng Môn</p>
+                        <p id="totalSubjects" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">Xếp Loại</p>
+                        <p id="classification" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="text-center py-8">
+                <div class="inline-block animate-spin">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-600 mt-3">Đang tải thông tin điểm số...</p>
+            </div>
+
+            <!-- Grades List -->
+            <div id="gradesContent" class="hidden">
+                <div id="gradesList" class="space-y-3"></div>
+                <div id="noGrades" class="hidden text-center py-8 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p class="text-yellow-700 font-semibold">Chưa có điểm số nào được ghi nhận</p>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMsg" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                <p id="errorText" class="font-bold">Lỗi</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let contractInstance = null;
+        let currentStudentId = null;
+        let walletAddress = null;
+
+        async function init() {
+            try {
+                // Get parameters from URL
+                const params = new URLSearchParams(window.location.search);
+                walletAddress = params.get('wallet');
+                currentStudentId = params.get('studentId');
+
+                if (!walletAddress || !currentStudentId) {
+                    showError(' Thông tin không hợp lệ. Vui lòng quay lại trang hồ sơ.');
+                    return;
+                }
+
+                // Initialize contract
+                contractInstance = getContract();
+
+                // Load student info
+                await loadStudentInfo();
+
+                // Load grades
+                await loadGrades();
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('gradesContent').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Lỗi khởi tạo: ' + error.message);
+            }
+        }
+
+        async function loadStudentInfo() {
+            try {
+                const student = await contractInstance.methods.getStudent(currentStudentId).call();
+                
+                if (!student || !student.exists) {
+                    throw new Error('Không tìm thấy thông tin sinh viên');
+                }
+
+                document.getElementById('studentName').textContent = student.fullName;
+                document.getElementById('studentId').textContent = 'MSSV: ' + student.studentId;
+
+            } catch (error) {
+                console.error('Load student info error:', error);
+                showError('Lỗi tải thông tin sinh viên: ' + error.message);
+            }
+        }
+
+        async function loadGrades() {
+            try {
+                // Get all grades for this student
+                const grades = await contractInstance.methods.getStudentGradesByWallet(walletAddress).call();
+                
+                console.log('Grades:', grades);
+
+                if (!grades || grades.length === 0) {
+                    document.getElementById('noGrades').classList.remove('hidden');
+                    document.getElementById('gradesList').innerHTML = '';
+                    return;
+                }
+
+                let html = '';
+                let totalScore = 0;
+                let count = grades.length;
+                const gradeMap = {};
+
+                // Group by semester
+                grades.forEach(grade => {
+                    const semester = grade.semester || 'Chưa xác định';
+                    if (!gradeMap[semester]) {
+                        gradeMap[semester] = [];
+                    }
+                    gradeMap[semester].push(grade);
+                    totalScore += parseInt(grade.score);
+                });
+
+                const averageScore = (totalScore / count).toFixed(2);
+
+                // Determine classification
+                let classification = '';
+                if (averageScore >= 8.5) {
+                    classification = ' Xuất Sắc';
+                } else if (averageScore >= 8) {
+                    classification = ' Giỏi';
+                } else if (averageScore >= 7) {
+                    classification = ' Khá';
+                } else if (averageScore >= 5) {
+                    classification = ' Trung Bình';
+                } else {
+                    classification = ' Chưa Đạt';
+                }
+
+                // Show GPA summary
+                document.getElementById('gpaSummary').classList.remove('hidden');
+                document.getElementById('averageGPA').textContent = averageScore;
+                document.getElementById('totalSubjects').textContent = count;
+                document.getElementById('classification').textContent = classification;
+
+                // Build HTML by semester
+                for (const [semester, semesterGrades] of Object.entries(gradeMap)) {
+                    html += `
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-3 pb-2 border-b-2 border-blue-500">
+                                Học kỳ ${semester}
+                            </h3>
+                            <div class="space-y-2">
+                    `;
+
+                    semesterGrades.forEach(grade => {
+                        const score = parseInt(grade.score);
+                        let scoreColor = '';
+                        let scoreClass = '';
+
+                        if (score >= 8.5) {
+                            scoreColor = 'from-green-500 to-emerald-500';
+                            scoreClass = 'text-white';
+                        } else if (score >= 8) {
+                            scoreColor = 'from-blue-500 to-cyan-500';
+                            scoreClass = 'text-white';
+                        } else if (score >= 7) {
+                            scoreColor = 'from-yellow-500 to-orange-500';
+                            scoreClass = 'text-white';
+                        } else if (score >= 5) {
+                            scoreColor = 'from-orange-500 to-red-500';
+                            scoreClass = 'text-white';
+                        } else {
+                            scoreColor = 'from-red-500 to-pink-500';
+                            scoreClass = 'text-white';
+                        }
+
+                        html += `
+                            <div class="flex justify-between items-center bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition border-l-4 border-blue-400">
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">${grade.subjectName}</p>
+                                    <p class="text-sm text-gray-600 mt-1">Mã môn: ${grade.subjectName}</p>
+                                </div>
+                                <div class="text-center ml-4">
+                                    <div class="bg-gradient-to-br ${scoreColor} ${scoreClass} font-bold text-lg rounded-full w-16 h-16 flex items-center justify-center">
+                                        ${grade.score}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('gradesList').innerHTML = html;
+
+            } catch (error) {
+                console.error('Load grades error:', error);
+                showError('Lỗi tải thông tin điểm số: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMsg').classList.remove('hidden');
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('gradesContent').classList.add('hidden');
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

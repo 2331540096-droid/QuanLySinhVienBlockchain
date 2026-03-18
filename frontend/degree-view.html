@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xem Bằng Cấp - Hệ Thống Quản Lý Sinh Viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="/frontend/js/contract.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 via-purple-900 to-black min-h-screen p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-2xl p-8 mb-6">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Xem Bằng Cấp</h1>
+                <p class="text-gray-600">Thông tin bằng cấp đã được xác minh trên blockchain</p>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="text-center py-12">
+                <div class="inline-block animate-spin">
+                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-600 mt-4 text-lg">Đang tải thông tin bằng cấp...</p>
+            </div>
+
+            <!-- Degree Content -->
+            <div id="degreeContent" class="hidden">
+                <!-- Verification Badge -->
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+                    <p class="text-green-800 font-bold">Bằng Cấp Hợp Lệ - Đã Xác Minh Trên Blockchain</p>
+                </div>
+
+                <div class="bg-white rounded-lg border-2 border-gray-200 p-8 mb-6 shadow-lg">
+                    <!-- Header -->
+                    <div class="text-center mb-8 pb-6 border-b-2 border-gray-200">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">CHỨNG CHỈ BẰNG CẤP</h2>
+                        <p class="text-gray-600 font-semibold">Hệ Thống Quản Lý Sinh Viên Blockchain</p>
+                    </div>
+
+                    <!-- Student Info Section -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Thông Tin Sinh Viên</h3>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Mã Số Sinh Viên (MSSV)</p>
+                                <p class="text-2xl font-bold text-gray-800" id="studentId">-</p>
+                            </div>
+                            <div class="border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Họ Tên</p>
+                                <p class="text-xl font-bold text-gray-800" id="fullName">-</p>
+                            </div>
+                            <div class="border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Ngày Sinh</p>
+                                <p id="dateOfBirth" class="text-gray-800">-</p>
+                            </div>
+                            <div class="border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Chuyên Ngành / Lớp</p>
+                                <p id="course" class="text-gray-800">-</p>
+                            </div>
+                            <div class="col-span-2 border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Năm Nhập Học</p>
+                                <p id="enrollmentYear" class="text-gray-800">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Degree Info Section -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Thông Tin Bằng Cấp</h3>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Loại Bằng</p>
+                                <p class="text-xl font-bold text-gray-800" id="degreeType">-</p>
+                            </div>
+                            <div class="border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Cơ Quan Cấp</p>
+                                <p id="issuingOrganization" class="text-gray-800">-</p>
+                            </div>
+                            <div class="col-span-2 border-b border-gray-300 pb-4">
+                                <p class="text-gray-600 text-sm">Ngày Cấp</p>
+                                <p id="issueDate" class="text-xl font-bold text-gray-800">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blockchain Verification -->
+                    <div class="bg-blue-50 border border-blue-300 rounded p-4">
+                        <p class="text-blue-800 font-semibold text-sm mb-2">Xác Minh Blockchain</p>
+                        <p class="text-blue-700 text-xs font-mono break-all" id="degreeHash">-</p>
+                    </div>
+                </div>
+
+                <!-- Print Button -->
+                <div class="text-center">
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition">
+                         In Bằng Cấp
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorContent" class="hidden">
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
+                    <p class="text-red-800 font-bold text-lg">Không Thể Tải Bằng Cấp</p>
+                    <p class="text-red-700 mt-2" id="errorMessage">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get hash from URL parameter
+        function getHashFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('hash');
+        }
+
+        // Initialize Web3
+        function initWeb3() {
+            if (typeof window.ethereum !== 'undefined') {
+                window.web3 = new Web3(window.ethereum);
+                return true;
+            }
+            // Use public RPC if MetaMask not available (read-only)
+            window.web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+            return true;
+        }
+
+        async function loadDegreeInfo() {
+            const degreeHash = getHashFromURL();
+            
+            if (!degreeHash) {
+                showError('Không có mã hash bằng cấp trong URL');
+                return;
+            }
+
+            try {
+                // Initialize Web3
+                if (!initWeb3()) {
+                    throw new Error('Không thể kết nối blockchain');
+                }
+
+                // Get contract and fetch degree info
+                const contract = getContract();
+                const result = await contract.methods.verifyDegreeByHash(degreeHash).call();
+                
+                const isValid = result[0];
+                const degree = result[1];
+                const student = result[2];
+
+                if (!isValid || !student.exists) {
+                    showError('Bằng cấp không hợp lệ hoặc không tồn tại');
+                    return;
+                }
+
+                // Display degree information
+                document.getElementById('studentId').textContent = student.studentId;
+                document.getElementById('fullName').textContent = student.fullName;
+                document.getElementById('dateOfBirth').textContent = student.dateOfBirth;
+                document.getElementById('course').textContent = student.course;
+                document.getElementById('enrollmentYear').textContent = student.enrollmentYear;
+                
+                document.getElementById('degreeType').textContent = degree.degreeType;
+                document.getElementById('issuingOrganization').textContent = degree.issuingOrganization;
+                
+                // Format issue date
+                const issueDate = new Date(parseInt(degree.issueDate) * 1000);
+                document.getElementById('issueDate').textContent = issueDate.toLocaleDateString('vi-VN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                document.getElementById('degreeHash').textContent = degree.degreeHash;
+
+                // Hide loading and show content
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('degreeContent').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error loading degree:', error);
+                showError('Lỗi tải thông tin bằng cấp: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('degreeContent').classList.add('hidden');
+            document.getElementById('errorContent').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // Auto-load degree info when page loads
+        window.addEventListener('load', () => {
+            console.log('Degree view page loaded');
+            loadDegreeInfo();
+        });
+    </script>
+</body>
+</html>

@@ -9,14 +9,14 @@
 <body class="bg-slate-50">
     <div class="min-h-screen flex flex-col">
         <!-- Navigation -->
-        <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <nav class="bg-blue-900 border-b border-blue-800 sticky top-0 z-50">
             <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                 <h1 class="text-lg font-bold text-slate-800">Student Credentials</h1>
                 <div class="flex items-center space-x-8">
-                    <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
-                    <a href="verify-degree.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Xác Minh Bằng</a>
-                    <a href="student-info.html" class="text-slate-900 font-medium text-sm border-b-2 border-sky-600 pb-1 transition">Tra Cứu Thông Tin</a>
-                    <a id="navLoginBtn" href="login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
+                    <a href="/frontend/index.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Trang Chủ</a>
+                    <a href="/frontend/verify-degree.html" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition">Xác Minh Bằng</a>
+                    <a href="/frontend/student-info.html" class="text-white font-medium text-sm border-b-2 border-blue-400 pb-1 transition">Tra Cứu Thông Tin</a>
+                    <a id="navLoginBtn" href="/frontend/login-admin.html" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition">Đăng Nhập</a>
                     <button id="navLogoutBtn" onclick="logout()" class="bg-sky-600 text-white px-5 py-2 rounded-lg hover:bg-sky-700 font-medium text-sm transition hidden">Đăng Xuất</button>
                     <span id="navGreeting" class="text-slate-700 font-medium text-sm hidden"></span>
                 </div>
@@ -28,12 +28,32 @@
             <!-- Not Connected Section -->
             <div id="notConnectedSection">
                 <div class="text-center py-20">
-                    <h2 class="text-4xl font-bold text-slate-900 mb-4">Kết Nối Ví để Xem Thông Tin</h2>
-                    <p class="text-slate-600 mb-8 text-lg">Vui lòng kết nối MetaMask để xem thông tin cá nhân, điểm số và bằng cấp</p>
+                    <h2 class="text-4xl font-bold text-slate-900 mb-4">Tra Cứu Thông Tin Sinh Viên</h2>
+                    <p class="text-slate-600 mb-8 text-lg">Nhập MSSV của bạn để xem thông tin</p>
+                    
+                    <div class="max-w-md mx-auto bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-slate-800 mb-2">Mã Số Sinh Viên (MSSV) *</label>
+                            <input 
+                                type="number" 
+                                id="studentIdInput"
+                                placeholder="VD: 123456"
+                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            >
+                        </div>
+                        <button 
+                            onclick="searchStudentInfo()"
+                            class="w-full bg-sky-600 text-white px-8 py-3 rounded-lg hover:bg-sky-700 font-semibold text-lg transition"
+                        >
+                            🔍 Tra Cứu
+                        </button>
+                    </div>
+
+                    <p class="text-slate-600 text-sm mt-8">Hoặc kết nối MetaMask để xem thông tin công khai:</p>
                     <button 
                         id="connectWalletBtn"
                         onclick="connectAndLoadInfo()"
-                        class="bg-sky-600 text-white px-8 py-3 rounded-lg hover:bg-sky-700 font-semibold text-lg inline-block transition"
+                        class="bg-slate-600 text-white px-8 py-3 rounded-lg hover:bg-slate-700 font-semibold text-lg inline-block transition mt-4"
                     >
                         Kết Nối MetaMask
                     </button>
@@ -170,6 +190,56 @@
         }
 
         /**
+         * Search student by MSSV
+         */
+        async function searchStudentInfo() {
+            try {
+                const studentId = document.getElementById('studentIdInput').value.trim();
+                
+                if (!studentId) {
+                    showError('❌ Vui lòng nhập MSSV!');
+                    return;
+                }
+
+                await loadStudentInfoPublic(parseInt(studentId));
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi: ' + error.message);
+            }
+        }
+
+        /**
+         * Connect wallet and load student info
+         */
+        async function connectAndLoadInfo() {
+            try {
+                showLoading();
+                
+                // Initialize Web3
+                if (!initWeb3()) {
+                    showError('❌ MetaMask không được tìm thấy. Vui lòng cài đặt MetaMask!');
+                    return;
+                }
+
+                // Connect wallet
+                await connectWallet();
+
+                // Wait a moment for userAccount to be set
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                console.log('Connected account:', userAccount);
+
+                // Load student info after connection
+                await loadStudentInfo();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('❌ Lỗi kết nối: ' + error.message);
+            }
+        }
+
+        /**
          * Load student info WITHOUT MetaMask using HTTP provider
          */
         async function loadStudentInfoPublic(studentId) {
@@ -188,7 +258,7 @@
                 // Fetch student
                 const student = await contract.methods.getStudent(studentId).call();
 
-                if (!student || !student.exists) {
+                if (!student || student.studentId == 0) {
                     showError('❌ Sinh viên không tồn tại trong hệ thống.');
                     document.getElementById('connectedSection').classList.add('hidden');
                     document.getElementById('notConnectedSection').classList.remove('hidden');
@@ -232,6 +302,7 @@
             document.getElementById('infoDateOfBirth').textContent = student.dateOfBirth || 'N/A';
             document.getElementById('infoCourse').textContent = student.course || 'N/A';
             document.getElementById('infoEnrollmentYear').textContent = student.enrollmentYear || 'N/A';
+            document.getElementById('studentInfoCard').classList.remove('hidden');
         }
 
         /**
@@ -395,92 +466,25 @@
                     return;
                 }
 
-                const contract = getContract();
-                
-                // Get student info by wallet address
-                const student = await contract.methods.getStudentByWallet(userAccount).call();
-                console.log('Student found:', student);
-
-                if (!student.studentId || student.studentId == 0) {
-                    showError('❌ Không tìm thấy hồ sơ sinh viên cho ví này. Vui lòng liên hệ Admin!');
-                    document.getElementById('notConnectedSection').classList.remove('hidden');
-                    document.getElementById('connectedSection').classList.add('hidden');
-                    return;
-                }
+                console.log('Loading student info for wallet:', userAccount);
 
                 // Hide not connected section, show connected section
                 document.getElementById('notConnectedSection').classList.add('hidden');
                 document.getElementById('connectedSection').classList.remove('hidden');
 
-                // Display greeting
-                document.getElementById('greetingText').textContent = '👋 Xin chào, ' + student.fullName;
-
-                // Display student info
-                document.getElementById('infoStudentId').textContent = student.studentId;
-                document.getElementById('infoFullName').textContent = student.fullName;
-                document.getElementById('infoDateOfBirth').textContent = student.dateOfBirth;
-                document.getElementById('infoCourse').textContent = student.course;
-                document.getElementById('infoEnrollmentYear').textContent = student.enrollmentYear;
-                document.getElementById('studentInfoCard').classList.remove('hidden');
-
-                // Load grades
-                try {
-                    const grades = await contract.methods.getStudentGradesByWallet(userAccount).call();
-                    
-                    if (grades && grades.length > 0) {
-                        let gradesHTML = '<div class="space-y-3">';
-                        grades.forEach((grade) => {
-                            gradesHTML += `<div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition">
-                                <div>
-                                    <p class="font-semibold text-slate-900">${grade.subjectName}</p>
-                                    <p class="text-xs text-slate-600 mt-1">Học kỳ: ${grade.semester}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-2xl font-bold text-sky-600">${grade.score}</p>
-                                    <p class="text-xs text-slate-600">điểm</p>
-                                </div>
-                            </div>`;
-                        });
-                        gradesHTML += '</div>';
-                        document.getElementById('gradesList').innerHTML = gradesHTML;
-                        document.getElementById('gradesCard').classList.remove('hidden');
-                    }
-                } catch (e) {
-                    console.error('Error loading grades:', e);
-                }
-
-                // Load degrees
-                try {
-                    const degreeIds = await contract.methods.getStudentDegreesByWallet(userAccount).call();
-                    
-                    if (degreeIds && degreeIds.length > 0) {
-                        let degreesHTML = '<div class="space-y-3">';
-                        
-                        for (let degreeId of degreeIds) {
-                            const result = await contract.methods.verifyDegree(degreeId).call();
-                            const degree = Array.isArray(result) ? result[1] : result.degree;
-                            const isValid = !degree.revoked;
-                            const statusText = isValid ? 'Hợp lệ' : 'Bị thu hồi';
-                            const statusColor = isValid ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50';
-                            
-                            degreesHTML += `<div class="p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition">
-                                <p class="font-semibold text-slate-900">${degree.degreeType}</p>
-                                <p class="text-xs text-slate-600 mt-1">Mã bằng: <span class="font-mono font-bold">${degree.degreeId}</span></p>
-                                <p class="text-xs text-slate-600">Cơ sở cấp: ${degree.issuingOrganization}</p>
-                                <p class="text-xs font-semibold mt-2 px-2 py-1 rounded inline-block ${statusColor}">${statusText}</p>
-                            </div>`;
-                        }
-                        
-                        degreesHTML += '</div>';
-                        document.getElementById('degreesList').innerHTML = degreesHTML;
-                        document.getElementById('degreesCard').classList.remove('hidden');
-                    }
-                } catch (e) {
-                    console.error('Error loading degrees:', e);
-                }
+                // Display greeting with wallet address
+                const shortAddress = userAccount.substring(0, 6) + '...' + userAccount.substring(userAccount.length - 4);
+                document.getElementById('greetingText').textContent = '👋 Xin chào, ' + shortAddress;
+                
+                // Show message that student data is not yet linked
+                showError('ℹ️ Thông tin sinh viên chưa được kết nối với ví này. Vui lòng liên hệ Admin để đăng ký ví Blockchain.');
+                
+                // Hide student info cards
+                document.getElementById('studentInfoCard').classList.add('hidden');
+                document.getElementById('gradesCard').classList.add('hidden');
+                document.getElementById('degreesCard').classList.add('hidden');
 
                 hideLoading();
-                hideError();
 
             } catch (error) {
                 console.error('Error:', error);
@@ -499,29 +503,9 @@
                 await new Promise(resolve => setTimeout(resolve, 500));
 
                 console.log('Switched account:', userAccount);
-                console.log('Is admin?', isAdminWallet(userAccount));
 
-                // Check if new wallet is admin
-                if (isAdminWallet(userAccount)) {
-                    console.log('Admin wallet detected, redirecting to dashboard...');
-                    // Store session for admin
-                    const session = {
-                        role: 'admin',
-                        walletAddress: userAccount.toLowerCase(),
-                        loginTime: new Date().getTime(),
-                        expiresIn: 8 * 60 * 60 * 1000
-                    };
-                    localStorage.setItem('user_session', JSON.stringify(session));
-                    localStorage.setItem('user_role', 'admin');
-                    localStorage.setItem('connected_wallet', userAccount.toLowerCase());
-                    
-                    // Redirect to admin dashboard
-                    alert('✅ Đã chuyển sang ví Admin! Đang chuyển đến Dashboard...');
-                    window.location.href = 'admin/dashboard.html';
-                    return;
-                }
-                
-                await loadStudentInfo();
+                // Reload the page to update with new wallet
+                window.location.reload();
             } catch (error) {
                 console.error('Error:', error);
                 showError('❌ Lỗi chuyển ví: ' + error.message);
@@ -741,7 +725,7 @@
             document.getElementById('navLogoutBtn').classList.add('hidden');
             document.getElementById('navGreeting').classList.add('hidden');
             document.getElementById('navGreeting').textContent = '';
-            window.location.href = 'student-info.html';
+            window.location.href = '/frontend/index.html';
         }
 
         /**
