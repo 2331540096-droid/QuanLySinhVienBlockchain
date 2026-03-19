@@ -119,14 +119,20 @@
             return params.get('hash');
         }
 
-        // Initialize Web3
-        function initWeb3() {
-            if (typeof window.ethereum !== 'undefined') {
-                window.web3 = new Web3(window.ethereum);
-                return true;
+        // Initialize Web3 from injected wallet provider (MetaMask)
+        async function initWeb3() {
+            if (typeof window.ethereum === 'undefined') {
+                throw new Error('Không phát hiện ví Web3. Hãy mở link bằng MetaMask Browser hoặc trình duyệt có ví Web3.');
             }
-            // Use public RPC if MetaMask not available (read-only)
-            window.web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+
+            window.web3 = new Web3(window.ethereum);
+
+            // Read-only call does not require account permission, but still needs correct network.
+            const codeAtAddress = await window.web3.eth.getCode(CONTRACT_ADDRESS);
+            if (!codeAtAddress || codeAtAddress === '0x' || codeAtAddress === '0x0') {
+                throw new Error('Không tìm thấy contract trên network hiện tại. Hãy chuyển MetaMask sang mạng đã deploy contract.');
+            }
+
             return true;
         }
 
@@ -140,9 +146,7 @@
 
             try {
                 // Initialize Web3
-                if (!initWeb3()) {
-                    throw new Error('Không thể kết nối blockchain');
-                }
+                await initWeb3();
 
                 // Get contract and fetch degree info
                 const contract = getContract();
