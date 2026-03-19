@@ -14,7 +14,7 @@
             <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                 <h1 class="text-lg font-bold text-white">Đăng Nhập Hệ Thống</h1>
                 <div class="flex items-center space-x-6">
-                    <a href="/index.html" class="text-blue-100 hover:text-white font-medium text-sm transition">← Trang Chủ</a>
+                    <a href="index.html" class="text-blue-100 hover:text-white font-medium text-sm transition">← Trang Chủ</a>
                     <button id="navLogoutBtn" onclick="logout()" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm transition hidden">Đăng Xuất</button>
                     <span id="navGreeting" class="text-blue-100 font-medium text-sm hidden"></span>
                 </div>
@@ -71,19 +71,10 @@
                 <div id="message" class="hidden rounded-lg p-4 mb-4 text-sm"></div>
 
                 <!-- Info Section -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-xs font-semibold text-blue-900 mb-3">Hướng dẫn:</p>
-                    <ul class="text-xs text-slate-700 space-y-1 list-disc list-inside">
-                        <li>Cài đặt MetaMask trong trình duyệt</li>
-                        <li>Kết nối ví Ganache (localhost:7545)</li>
-                        <li>Admin vào Dashboard quản lý</li>
-                        <li>Student vào Tra Cứu Thông Tin</li>
-                    </ul>
-                </div>
-
+                
                 <!-- Back Link -->
                 <div class="text-center mt-6">
-                    <a href="/index.html" class="text-blue-600 hover:text-blue-700 font-medium text-sm">← Quay lại Trang chủ</a>
+                    <a href="index.html" class="text-blue-600 hover:text-blue-700 font-medium text-sm">← Quay lại Trang chủ</a>
                 </div>
             </div>
         </div>
@@ -196,17 +187,17 @@
             if (result.role === 'admin') {
                 document.getElementById('greetingText').textContent = '✅ Xin chào Admin ' + shortAddress;
                 setTimeout(() => {
-                    window.location.href = '/frontend/admin/dashboard.html';
+                    window.location.href = 'admin/dashboard.html';
                 }, 1500);
             } else if (result.role === 'school') {
                 document.getElementById('greetingText').textContent = '✅ Xin chào Nhà Trường ' + shortAddress;
                 setTimeout(() => {
-                    window.location.href = '/frontend/school/dashboard.html';
+                    window.location.href = 'school/dashboard.html';
                 }, 1500);
             } else {
                 document.getElementById('greetingText').textContent = '✅ Xin chào Sinh Viên ' + shortAddress;
                 setTimeout(() => {
-                    window.location.href = '/frontend/student-profile.html';
+                    window.location.href = 'student-profile.html';
                 }, 1500);
             }
         }
@@ -238,7 +229,7 @@
             document.getElementById('navLogoutBtn').classList.add('hidden');
             document.getElementById('navGreeting').classList.add('hidden');
             document.getElementById('navGreeting').textContent = '';
-            window.location.href = '/frontend/index.html';
+            window.location.href = 'index.html';
         }
 
         /**

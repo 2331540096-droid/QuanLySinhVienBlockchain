@@ -63,23 +63,6 @@ async function autoReconnectStudentWallet(savedWalletAddress) {
         return false;
     }
 }
-
-
-
-// Display console in page
-function showDebugPanel() {
-    let debugPanel = document.getElementById('debugPanel');
-    if (!debugPanel) {
-        debugPanel = document.createElement('div');
-        debugPanel.id = 'debugPanel';
-        debugPanel.style.cssText = 'position: fixed; bottom: 10px; right: 10px; width: 400px; height: 300px; background: black; color: lime; font-family: monospace; font-size: 11px; padding: 10px; overflow-y: auto; z-index: 10000; border: 1px solid lime;';
-        document.body.appendChild(debugPanel);
-    }
-    debugPanel.innerHTML = '<strong>Debug Console:</strong><br>' + consoleOutput.slice(-50).join('<br>');
-}
-
-setInterval(showDebugPanel, 1000);
-
 // ================================
 // Degree ID Generation & Mapping
 // ================================

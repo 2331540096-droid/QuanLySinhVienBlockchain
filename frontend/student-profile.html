@@ -6,8 +6,8 @@
     <title>Hồ Sơ Sinh Viên</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
-    <script src="/js/contract.js"></script>
-    <script src="/js/web3.js"></script>
+    <script src="js/contract.js"></script>
+    <script src="js/web3.js"></script>
 </head>
 <body class="bg-white min-h-screen p-6">
     <div class="max-w-3xl mx-auto">
@@ -78,7 +78,7 @@
                 </div>
 
                 <!-- Back Button -->
-                <button onclick="window.location.href='/frontend/index.html'" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                <button onclick="window.location.href='index.html'" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition">
                     ← Quay Lại Trang Chủ
                 </button>
             </div>
@@ -118,6 +118,11 @@
         let contractInstance = null;
         let currentAccount = null;
         let currentStudentId = null;
+
+        function navigateTo(path) {
+            const normalized = path.startsWith('/') ? path.substring(1) : path;
+            window.location.href = normalized;
+        }
 
         async function init() {
             try {
@@ -173,7 +178,7 @@
             document.getElementById('errorMsg').classList.add('hidden');
             
             // Redirect to login page
-            window.location.href = '/frontend/login-admin.html';
+            navigateTo('/login-admin.html');
         }
 
         async function loadStudentProfile() {
@@ -228,13 +233,13 @@
 
         function goToDegrees() {
             if (currentAccount && currentStudentId) {
-                window.location.href = `/frontend/student-degrees.html?wallet=${currentAccount}&studentId=${currentStudentId}`;
+                navigateTo(`/student-degrees.html?wallet=${encodeURIComponent(currentAccount)}&studentId=${currentStudentId}`);
             }
         }
 
         function goToGrades() {
             if (currentAccount && currentStudentId) {
-                window.location.href = `/frontend/student-grades.html?wallet=${currentAccount}&studentId=${currentStudentId}`;
+                navigateTo(`/student-grades.html?wallet=${encodeURIComponent(currentAccount)}&studentId=${currentStudentId}`);
             }
         }
 

@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="/js/contract.js"></script>
-    <script src="/js/web3.js"></script>
+    <script src="js/contract.js"></script>
+    <script src="js/web3.js"></script>
 </head>
 <body class="bg-white min-h-screen p-6">
     <div class="max-w-3xl mx-auto">
@@ -194,11 +194,12 @@
             // Create QR code data with proper URL construction
             // Kiểm tra và log URL để debug
             const currentPath = window.location.pathname;
-            const baseUrl = window.location.protocol + '//' + window.location.host;
-            const qrUrl = baseUrl + '/frontend/degree-view.html?hash=' + degreeHash;
+            const degreeViewUrl = new URL('degree-view.html', window.location.href);
+            degreeViewUrl.searchParams.set('hash', degreeHash);
+            const qrUrl = degreeViewUrl.toString();
             
             console.log('QR URL:', qrUrl);
-            console.log('Base URL:', baseUrl);
+            console.log('Base URL:', window.location.origin);
             console.log('Current path:', currentPath);
             
             // Create modal div
